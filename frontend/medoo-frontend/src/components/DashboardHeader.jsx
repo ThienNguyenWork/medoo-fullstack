@@ -15,7 +15,7 @@ const handleLogout = () => {
     
     // Delay 1 giây trước khi chuyển hướng
     setTimeout(() => {
-      window.location.href = '/auth';
+        navigate('/auth');
     }, 1000);
   };
 
