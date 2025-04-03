@@ -7,7 +7,7 @@ import { FaEye, FaEyeSlash, FaArrowLeft } from 'react-icons/fa';
 // Thêm constant ở đầu file
 const API_BASE_URL = 'http://localhost:5001/api';
 
-const AuthPage = () => {
+const AuthPage = ({onLoginSuccess} ) => {
   const [activeTab, setActiveTab] = useState('login');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -81,101 +81,115 @@ useEffect(() => {
     const { name, value } = e.target;
     setResetPasswordForm({ ...resetPasswordForm, [name]: value });
   };
-  // Sửa hàm handleLogin
-const handleLogin = async (e) => {
-  e.preventDefault();
-  setIsLoading(true);
-  setMessage({ type: '', text: '' });
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setMessage({ type: '', text: '' });
 
-  try {
-    const response = await fetch(`${API_BASE_URL}/users/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email: loginForm.email,
-        password: loginForm.password
-      }),
-    });
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: loginForm.email,
+          password: loginForm.password
+        })
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (!response.ok) {
-      throw new Error(data.message || 'Đăng nhập thất bại');
+      if (!response.ok) {
+        throw new Error(data.message || 'Đăng nhập thất bại');
+      }
+
+      if (data.token) {
+        // Lưu token vào localStorage
+        localStorage.setItem('token', data.token);
+        
+        // Thông báo thành công và đợi một chút trước khi chuyển trang
+        setMessage({ type: 'success', text: 'Đăng nhập thành công!' });
+        
+        // Gọi hàm callback để cập nhật trạng thái xác thực ở component cha
+        if (onLoginSuccess) {
+          onLoginSuccess(data.token);
+        }
+        
+        // Đợi một chút trước khi chuyển trang để đảm bảo token được lưu
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 500);
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setMessage({ 
+        type: 'error', 
+        text: error.message || 'Đăng nhập thất bại. Vui lòng thử lại.' 
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setMessage({ type: '', text: '' });
+
+    // Kiểm tra mật khẩu xác nhận
+    if (registerForm.password !== registerForm.confirmPassword) {
+      setMessage({ type: 'error', text: 'Mật khẩu không khớp' });
+      setIsLoading(false);
+      return;
     }
 
-    if (data.token) {
-      localStorage.setItem('token', data.token);
-      setMessage({ type: 'success', text: 'Đăng nhập thành công!' });
-      
-      // Chuyển hướng ngay không cần validate lại
-      navigate('/dashboard');
-    } else {
-      throw new Error('Token không được trả về từ server');
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          username: registerForm.username,
+          email: registerForm.email,
+          password: registerForm.password
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Đăng ký thất bại');
+      }
+
+      if (data.token) {
+        // Lưu token vào localStorage
+        localStorage.setItem('token', data.token);
+        
+        // Thông báo thành công
+        setMessage({ type: 'success', text: 'Đăng ký thành công!' });
+        
+        // Gọi hàm callback để cập nhật trạng thái xác thực ở component cha
+        if (onLoginSuccess) {
+          onLoginSuccess(data.token);
+        }
+        
+        // Đợi một chút trước khi chuyển trang để đảm bảo token được lưu
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 500);
+      }
+    } catch (error) {
+      console.error('Register error:', error);
+      setMessage({ 
+        type: 'error', 
+        text: error.message || 'Đăng ký thất bại. Vui lòng thử lại.' 
+      });
+    } finally {
+      setIsLoading(false);
     }
-  } catch (error) {
-    console.error('Login error:', error);
-    setMessage({ 
-      type: 'error', 
-      text: error.message.includes('Mạng') 
-        ? 'Lỗi kết nối mạng' 
-        : error.message || 'Đăng nhập thất bại'
-    });
-    localStorage.removeItem('token');
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-
-  // Sửa hàm handleRegister
-const handleRegister = async (e) => {
-  e.preventDefault();
-  setIsLoading(true);
-  setMessage({ type: '', text: '' });
-
-  // Validate dữ liệu
-  if (registerForm.password !== registerForm.confirmPassword) {
-    setMessage({ type: 'error', text: 'Mật khẩu không khớp' });
-    setIsLoading(false);
-    return;
-  }
-
-  try {
-    const response = await fetch(`${API_BASE_URL}/users/register`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        username: registerForm.username,
-        email: registerForm.email,
-        password: registerForm.password
-      })
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Đăng ký thất bại');
-    }
-
-    if (data.token) {
-      setMessage({ type: 'success', text: 'Đăng ký thành công!' });
-      localStorage.setItem('token', data.token);
-      navigate('/dashboard');
-    }
-  } catch (error) {
-    console.error('Register error:', error);
-    setMessage({ 
-      type: 'error', 
-      text: error.message || 'Đăng ký thất bại. Vui lòng thử lại.' 
-    });
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   const handleForgotPassword = async (e) => {
     e.preventDefault();
