@@ -1,0 +1,94 @@
+.hero {
+    display: flex;
+    padding: 60px 40px;
+    background: linear-gradient(135deg, #f6f7ff 0%, #edf1ff 100%);
+    min-height: 500px;
+  }
+  
+  .hero-content {
+    flex: 1;
+    max-width: 50%;
+    padding-right: 50px;
+  }
+  
+  .hero-title {
+    font-size: 48px;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1.2;
+    margin-bottom: 20px;
+  }
+  
+  .hero-description {
+    font-size: 16px;
+    color: #4b5563;
+    line-height: 1.6;
+    margin-bottom: 30px;
+    max-width: 90%;
+  }
+  
+  .connect-wallet-btn {
+    background-color: #6366f1;
+    color: white;
+    border: none;
+    padding: 14px 28px;
+    border-radius: 8px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+  }
+  
+  .connect-wallet-btn:hover {
+    background-color: #4f46e5;
+  }
+  
+  .arrow-icon {
+    font-size: 14px;
+  }
+  
+  .hero-image {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .sphere-image {
+    max-width: 100%;
+    height: auto;
+    max-height: 400px;
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  @keyframes float {
+    0% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-20px);
+    }
+    100% {
+      transform: translateY(0px);
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .hero {
+      flex-direction: column;
+      padding: 40px 20px;
+    }
+  
+    .hero-content {
+      max-width: 100%;
+      padding-right: 0;
+      margin-bottom: 40px;
+    }
+  
+    .hero-title {
+      font-size: 36px;
+    }
+  }
