@@ -108,15 +108,12 @@ useEffect(() => {
         // Lưu token vào localStorage
         localStorage.setItem('token', data.token);
         
-        // Thông báo thành công và đợi một chút trước khi chuyển trang
-        setMessage({ type: 'success', text: 'Đăng nhập thành công!' });
-        
-        // Gọi hàm callback để cập nhật trạng thái xác thực ở component cha
+        // Gọi callback ngay lập tức để cập nhật trạng thái
         if (onLoginSuccess) {
           onLoginSuccess(data.token);
         }
         
-        // Đợi một chút trước khi chuyển trang để đảm bảo token được lưu
+        // Sau đó mới chuyển hướng
         setTimeout(() => {
           navigate('/dashboard');
         }, 500);

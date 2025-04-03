@@ -3,11 +3,20 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const DashboardHeader = () => {
-  const navigate = useNavigate();
+const navigate = useNavigate();
 
-  const handleLogout = () => {
+ // Hàm xử lý đăng xuất đơn giản
+const handleLogout = () => {
+    // Xóa token khỏi localStorage
     localStorage.removeItem('token');
-    navigate('/auth');
+    
+    // Thông báo đăng xuất thành công (nếu muốn)
+    console.log('Đã đăng xuất thành công');
+    
+    // Delay 1 giây trước khi chuyển hướng
+    setTimeout(() => {
+      window.location.href = '/auth';
+    }, 1000);
   };
 
   return (

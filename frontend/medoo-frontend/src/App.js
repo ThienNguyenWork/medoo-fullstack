@@ -16,61 +16,70 @@ function App() {
     checkAuthentication();
   }, []);
 
-  // Hàm kiểm tra xác thực
-  const checkAuthentication = async () => {
-    // Lấy token từ localStorage
-    const token = localStorage.getItem('token');
-    
-    // Nếu không có token, không cần kiểm tra thêm
-    if (!token) {
-      setIsAuthenticated(false);
-      setLoading(false);
-      return;
-    }
+  // Hàm kiểm tra xác thực đã được sửa
+const checkAuthentication = async () => {
+  // Lấy token từ localStorage
+  const token = localStorage.getItem('token');
+  
+  console.log("Checking authentication, token exists:", !!token);
+  
+  // Nếu không có token, không cần kiểm tra thêm
+  if (!token) {
+    setIsAuthenticated(false);
+    setLoading(false);
+    return;
+  }
 
-    try {
-      // Gọi API để kiểm tra token
-      const response = await fetch('http://localhost:5001/api/users/validate-token', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      // Xử lý kết quả
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          // Token hợp lệ
-          setIsAuthenticated(true);
-        } else {
-          // Token không hợp lệ theo server
-          console.warn('Token validation failed:', data.message);
-          setIsAuthenticated(false);
-        }
-      } else {
-        // Lỗi kết nối hoặc server
-        console.warn('Token validation request failed:', response.status);
-        // Vẫn giữ trạng thái đăng nhập nếu chỉ là lỗi kết nối
-        // Chỉ đăng xuất nếu server rõ ràng báo token không hợp lệ
-        if (response.status === 401) {
-          setIsAuthenticated(false);
-        } else {
-          // Giả định rằng người dùng vẫn đăng nhập nếu không phải lỗi 401
-          setIsAuthenticated(true);
-        }
+  try {
+    // Gọi API để kiểm tra token
+    const response = await fetch('http://localhost:5001/api/users/validate-token', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
       }
-    } catch (error) {
-      // Lỗi mạng hoặc khác
-      console.error('Auth check error:', error);
-      // Giả định rằng người dùng vẫn đăng nhập nếu là lỗi mạng
-      setIsAuthenticated(true);
-    } finally {
-      setLoading(false);
-    }
-  };
+    });
 
+    const data = await response.json();
+    console.log("Token validation response:", response.status, data);
+
+    // Xử lý kết quả
+    if (response.ok) {
+      if (data.success) {
+        // Token hợp lệ
+        setIsAuthenticated(true);
+      } else {
+        // Token không hợp lệ theo server
+        console.warn('Token validation failed:', data.message);
+        // KHÔNG xóa token nếu server chỉ báo không hợp lệ tạm thời
+        setIsAuthenticated(false);
+      }
+    } else {
+      // Lỗi kết nối hoặc server
+      console.warn('Token validation request failed:', response.status);
+      
+      // Quan trọng: KHÔNG reset isAuthenticated thành false khi có lỗi kết nối
+      // Cho phép người dùng tiếp tục sử dụng token hiện tại
+      if (response.status === 401) {
+        // Chỉ khi server rõ ràng từ chối token mới đăng xuất
+        console.log("Server rejected token with 401, logging out");
+        setIsAuthenticated(false);
+      } else {
+        // Giữ người dùng đăng nhập nếu chỉ là lỗi kết nối hoặc server
+        console.log("Connection error but keeping user logged in");
+        setIsAuthenticated(true);
+      }
+    }
+  } catch (error) {
+    // Lỗi mạng hoặc khác
+    console.error('Auth check error:', error);
+    // Quan trọng: Giữ trạng thái đăng nhập nếu là lỗi mạng
+    console.log("Network error but keeping user logged in");
+    setIsAuthenticated(true);
+  } finally {
+    setLoading(false);
+  }
+};
   // Hàm xử lý đăng nhập thành công
   const handleLoginSuccess = (token) => {
     console.log('Login success, token received:', !!token);
@@ -91,53 +100,51 @@ function App() {
     return <div className="loading-container">Đang tải...</div>;
   }
 
-  // Render giao diện chính
-  return (
-    <BrowserRouter>
-      <Routes>
-        {/* Route đăng nhập */}
-        <Route 
-          path="/auth" 
-          element={
-            isAuthenticated ? 
-              <Navigate to="/dashboard" replace /> : 
-              <AuthPage onLoginSuccess={handleLoginSuccess} />
-          } 
-        />
-        
-        {/* Route trang chủ */}
-        <Route 
-          path="/" 
-          element={
-            <>
-              <Header isAuthenticated={isAuthenticated} onLogout={handleLogout} />
-              <Hero />
-            </>
-          }
-        />
-        
-        {/* Route dashboard (bảo vệ bởi xác thực) */}
-        <Route 
-          path="/dashboard" 
-          element={
-            isAuthenticated ? (
-              <>
-                <Header isAuthenticated={isAuthenticated} onLogout={handleLogout} />
-                <Dashboard />
-              </>
-            ) : (
-              <Navigate to="/auth" replace />
-            )
-          } 
-        />
-        
-        {/* Route mặc định - chuyển hướng về trang chủ */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+  // Trong return statement của App component:
+return (
+  <BrowserRouter>
+    <Routes>
+      {/* Route đăng nhập - với logic cải tiến */}
+      <Route 
+        path="/auth" 
+        element={
+          isAuthenticated ? 
+            <Navigate to="/dashboard" replace /> : 
+            <AuthPage onLoginSuccess={handleLoginSuccess} />
+        } 
+      />
       
-      {/* Có thể thêm thông báo toàn cục ở đây nếu cần */}
-    </BrowserRouter>
-  );
+      {/* Route trang chủ */}
+      <Route 
+        path="/" 
+        element={
+          <>
+            <Header isAuthenticated={isAuthenticated} onLogout={handleLogout} />
+            <Hero />
+          </>
+        }
+      />
+      
+      {/* Route dashboard với cơ chế fallback */}
+      <Route 
+        path="/dashboard" 
+        element={
+          isAuthenticated || localStorage.getItem('token') ? (
+            <>
+              <Header isAuthenticated={true} onLogout={handleLogout} />
+              <Dashboard />
+            </>
+          ) : (
+            <Navigate to="/auth" replace />
+          )
+        } 
+      />
+      
+      {/* Route mặc định - chuyển hướng về trang chủ */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  </BrowserRouter>
+);
 }
 
 export default App;
