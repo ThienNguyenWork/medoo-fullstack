@@ -2,8 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Header from './components/Header';
 import Hero from './components/Hero';
+import ContentSlider from './components/ContentSlider';
 import AuthPage from './pages/userAuth';
+import AOS from 'aos';
+import 'aos/dist/aos.css'; // Import CSS AOS
+import './App.css';
 import Dashboard from './pages/Dashboard'; // Đảm bảo bạn đã tạo component này
+
+// Khởi tạo AOS
+AOS.init({
+  duration: 1000,
+  easing: 'ease-in-out',
+});
 
 function App() {
   // State để theo dõi trạng thái xác thực
@@ -121,6 +131,7 @@ return (
           <>
             <Header isAuthenticated={isAuthenticated} onLogout={handleLogout} />
             <Hero />
+            <ContentSlider />
           </>
         }
       />

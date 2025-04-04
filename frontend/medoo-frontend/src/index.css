@@ -1,3 +1,5 @@
+
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -11,3 +13,20 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+/* Hiệu ứng fill animation cho AOS */
+[data-aos="fill-animation"] {
+  transition-property: width;
+}
+
+/* Đảm bảo button hiển thị đúng */
+.relative.inline-block {
+  display: inline-block;
+  position: relative;
+}
+
+.fill-effect {
+  pointer-events: none; /* Không chặn sự kiện click */
+}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
