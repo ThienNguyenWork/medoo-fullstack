@@ -4,6 +4,7 @@ import Header from './components/Header';
 import Hero from './components/Hero';
 import ContentSlider from './components/ContentSlider';
 import AIEducationSection from './components/AIEducationSection'
+import NFTCollaborationSection from './components/NFTCollaborationSection'
 import AuthPage from './pages/userAuth';
 import AOS from 'aos';
 import 'aos/dist/aos.css'; // Import CSS AOS
@@ -97,7 +98,6 @@ const checkAuthentication = async () => {
     // Đặt trạng thái xác thực thành true
     setIsAuthenticated(true);
   };
-
   // Hàm xử lý đăng xuất
   const handleLogout = () => {
     // Xóa token khỏi localStorage
@@ -134,8 +134,10 @@ return (
             <Hero />
             <ContentSlider />
             <AIEducationSection />
+            <NFTCollaborationSection />
           </>
         }
+        
       />
       
       {/* Route dashboard với cơ chế fallback */}

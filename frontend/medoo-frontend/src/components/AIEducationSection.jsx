@@ -1,29 +1,28 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 const AIEducationSection = () => {
-  // Phases control
   const [leftPhase, setLeftPhase] = useState(-1);
   const [rightPhase, setRightPhase] = useState(-1);
   const [isFixed, setIsFixed] = useState(false);
   const [isAnimationComplete, setIsAnimationComplete] = useState(false);
   const heroRef = useRef(null);
+  const sectionRef = useRef(null);
   const phaseData = useRef({
     initialHeroTop: 0,
     PHASE_HEIGHT: 0,
     totalAnimationHeight: 0
   });
 
-  // Animation styles
   const tableStyles = {
     left: {
       '-1': { transform: 'translateY(100px)', opacity: 0 },
-      0: { transform: 'translateY(75px)', opacity: 1 },
-      1: { transform: 'translateY(50px)', opacity: 1 }
+      '0': { transform: 'translateY(75px)', opacity: 1 },
+      '1': { transform: 'translateY(50px)', opacity: 1 }
     },
     right: {
       '-1': { transform: 'translateY(100px)', opacity: 0 },
-      0: { transform: 'translateY(75px)', opacity: 1 },
-      1: { transform: 'translateY(50px)', opacity: 1 }
+      '0': { transform: 'translateY(75px)', opacity: 1 },
+      '1': { transform: 'translateY(50px)', opacity: 1 }
     }
   };
 
@@ -32,8 +31,8 @@ const AIEducationSection = () => {
       if (heroRef.current) {
         const rect = heroRef.current.getBoundingClientRect();
         phaseData.current.initialHeroTop = window.scrollY + rect.top;
-        phaseData.current.PHASE_HEIGHT = window.innerHeight / 4;
-        phaseData.current.totalAnimationHeight = phaseData.current.PHASE_HEIGHT * 7;
+        phaseData.current.PHASE_HEIGHT = window.innerHeight * 0.7; // Giảm chiều cao mỗi phase
+        phaseData.current.totalAnimationHeight = phaseData.current.PHASE_HEIGHT * 8;
       }
     };
 
@@ -56,20 +55,27 @@ const AIEducationSection = () => {
 
       // Phase transitions
       if (isFixed && !isAnimationComplete) {
-        if (relativeScroll >= totalAnimationHeight) {
+        // Kết thúc animation khi scroll đến 90% tổng chiều cao
+        if (relativeScroll >= totalAnimationHeight * 0.9) {
           setIsFixed(false);
           setIsAnimationComplete(true);
-          setLeftPhase(1);
-          setRightPhase(1);
+          
+          // Tự động scroll thêm một chút để đảm bảo chuyển tiếp mượt
+          window.scrollTo({
+            top: initialHeroTop + totalAnimationHeight + 100,
+            behavior: 'smooth'
+          });
         } else {
           const currentPhase = Math.floor(relativeScroll / PHASE_HEIGHT);
+          const phaseProgress = (relativeScroll % PHASE_HEIGHT) / PHASE_HEIGHT;
+
           switch(currentPhase) {
             case 0: 
               setLeftPhase(-1);
               setRightPhase(-1);
               break;
             case 1: 
-              setLeftPhase(0);
+              setLeftPhase(phaseProgress >= 0.5 ? 0 : -1);
               setRightPhase(-1);
               break;
             case 2: 
@@ -82,13 +88,17 @@ const AIEducationSection = () => {
               break;
             case 4: 
               setLeftPhase(1);
-              setRightPhase(0);
+              setRightPhase(phaseProgress >= 0.5 ? 0 : -1);
               break;
             case 5: 
               setLeftPhase(1);
               setRightPhase(0);
               break;
             case 6: 
+              setLeftPhase(1);
+              setRightPhase(phaseProgress >= 0.5 ? 1 : 0);
+              break;
+            case 7: 
               setLeftPhase(1);
               setRightPhase(1);
               break;
@@ -110,11 +120,11 @@ const AIEducationSection = () => {
   }, [isFixed, isAnimationComplete]);
 
   return (
-    <div className="relative">
+    <div className="relative" ref={sectionRef}>
       {/* Hero Section */}
       <div
         ref={heroRef}
-        className={`h-screen flex flex-col items-center justify-center bg-gray-900 transition-all duration-300 ${
+        className={`h-screen flex flex-col items-center justify-center bg-gray-900 ${
           isFixed && !isAnimationComplete ? 'fixed top-0 left-0 w-full z-50' : 'relative'
         }`}
       >
@@ -171,11 +181,14 @@ const AIEducationSection = () => {
         </div>
       </div>
 
-      {/* Scroll Spacer */}
+      {/* Scroll Spacer - Điều chỉnh để đảm bảo scroll mượt */}
       {isFixed && !isAnimationComplete && (
         <div 
-          className="invisible" 
-          style={{ height: `${window.innerHeight * 2}px` }}
+          className="invisible"
+          style={{ 
+            height: `${phaseData.current.totalAnimationHeight + window.innerHeight}px`,
+            marginBottom: '30vh'
+          }}
         />
       )}
     </div>
