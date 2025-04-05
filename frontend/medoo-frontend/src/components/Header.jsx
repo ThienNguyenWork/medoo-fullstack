@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { FaSearch, FaShoppingCart, FaBell, FaUser, FaAngleDown, FaBars, FaTimes } from 'react-icons/fa';
 import logo from '../assets/medoo-logo.png';
+import { useNavigate } from 'react-router-dom';
+
 
 const Header = () => {
   const [language, setLanguage] = useState('Tiếng Việt');
@@ -50,7 +52,7 @@ const Header = () => {
     setMobileMenuOpen(!mobileMenuOpen);
     if (showSearch) setShowSearch(false);
   };
-
+  const navigate = useNavigate();
   return (
     <header className="w-full bg-white shadow-sm">
       {/* Top Bar */}
@@ -121,8 +123,8 @@ const Header = () => {
       {/* Main Navigation */}
       <div className="flex justify-between items-center py-3 px-4 md:px-12">
         {/* Logo and Nav Links (Left Side) */}
-        <div className="flex items-center">
-          <div className="w-24 md:w-28 mr-5 md:mr-10">
+        <div className="flex items-center cursor-pointer" onClick={() => navigate('/')}>
+          <div className="w-24 md:w-28 mr-5 md:mr-10" >
             <img src={logo} alt="Medoo Logo" className="w-full h-auto" />
           </div>
           
@@ -244,11 +246,11 @@ const Header = () => {
           
           {/* User Avatar */}
           <div 
-            className="w-8 h-8 rounded-full bg-purple-600 hover:bg-purple-700 flex items-center justify-center cursor-pointer transition-colors"
-            onClick={() => alert('Tính năng tài khoản sẽ được triển khai sớm!')}
-          >
-            <FaUser className="text-white text-sm" />
-          </div>
+      className="w-8 h-8 rounded-full bg-purple-600 hover:bg-purple-700 flex items-center justify-center cursor-pointer transition-colors"
+      onClick={() => navigate('/dashboard')} // Chuyển hướng đến trang dashboard
+    >
+      <FaUser className="text-white text-sm" />
+    </div>
           
           {/* Mobile Menu Toggle */}
           <button 

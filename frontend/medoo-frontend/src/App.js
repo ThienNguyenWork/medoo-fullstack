@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import ContentSlider from './components/ContentSlider';
+import AIEducationSection from './components/AIEducationSection'
 import AuthPage from './pages/userAuth';
 import AOS from 'aos';
 import 'aos/dist/aos.css'; // Import CSS AOS
@@ -132,6 +133,7 @@ return (
             <Header isAuthenticated={isAuthenticated} onLogout={handleLogout} />
             <Hero />
             <ContentSlider />
+            <AIEducationSection />
           </>
         }
       />
