@@ -5,6 +5,7 @@ import Hero from './components/Hero';
 import ContentSlider from './components/ContentSlider';
 import AIEducationSection from './components/AIEducationSection'
 import NFTCollaborationSection from './components/NFTCollaborationSection'
+import RoadmapSlider from './components/RoadmapSlider'
 import AuthPage from './pages/userAuth';
 import AOS from 'aos';
 import 'aos/dist/aos.css'; // Import CSS AOS
@@ -135,6 +136,7 @@ return (
             <ContentSlider />
             <AIEducationSection />
             <NFTCollaborationSection />
+            <RoadmapSlider />
           </>
         }
         
