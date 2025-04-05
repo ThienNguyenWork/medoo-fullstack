@@ -1,9 +1,9 @@
 // src/components/DashboardHeader.jsx
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+
 
 const DashboardHeader = () => {
-const navigate = useNavigate();
+
 
  // Hàm xử lý đăng xuất đơn giản
 const handleLogout = () => {
@@ -15,7 +15,7 @@ const handleLogout = () => {
     
     // Delay 1 giây trước khi chuyển hướng
     setTimeout(() => {
-      navigate('/auth');
+      window.location.replace('/auth');
     }, 1000);
   };
 
