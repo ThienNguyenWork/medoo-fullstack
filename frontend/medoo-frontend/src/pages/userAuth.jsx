@@ -107,6 +107,7 @@ useEffect(() => {
       if (data.token) {
         // Lưu token vào localStorage
         localStorage.setItem('token', data.token);
+        localStorage.setItem('username', data.user.username);
         
         // Gọi callback ngay lập tức để cập nhật trạng thái
         if (onLoginSuccess) {

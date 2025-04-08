@@ -41,7 +41,7 @@ console.log("Token nhận được từ frontend:", token); // Kiểm tra token 
     await user.save();
 
     // Gắn thông tin user vào request
-    req.user = { ...user.toObject(), token };
+    req.user = { id: user._id, username: user.username, ...user.toObject(), token };
     next();
   } catch (error) {
     let message = 'Lỗi xác thực';

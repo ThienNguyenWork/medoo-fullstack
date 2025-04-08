@@ -1,145 +1,95 @@
 // src/components/DashboardHeader.jsx
-import React from 'react';
-
+import React, { useState, useEffect } from 'react';
+const API_BASE_URL = 'http://localhost:5001/api';
 
 const DashboardHeader = () => {
+  const [username, setUsername] = useState('');
 
+  useEffect(() => {
+    // Kiểm tra username trong localStorage khi component mount
+    const storedUsername = localStorage.getItem('username');
+    if (storedUsername) {
+      setUsername(storedUsername);
+    } else {
+      // Nếu không có, gọi API để lấy thông tin user
+      const fetchUserData = async () => {
+        try {
+          const token = localStorage.getItem('token');
+          if (!token) return;
 
- // Hàm xử lý đăng xuất đơn giản
-const handleLogout = () => {
-    // Xóa token khỏi localStorage
+          const response = await fetch(`${API_BASE_URL}/users/me`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            setUsername(data.username);
+            localStorage.setItem('username', data.username);
+          }
+        } catch (error) {
+          console.error('Lỗi khi lấy thông tin user:', error);
+        }
+      };
+
+      fetchUserData();
+    }
+  }, []);
+
+  const handleLogout = () => {
     localStorage.removeItem('token');
-    
-    // Thông báo đăng xuất thành công (nếu muốn)
-    console.log('Đã đăng xuất thành công');
-    
-    // Delay 1 giây trước khi chuyển hướng
-    setTimeout(() => {
-      window.location.replace('/auth');
-    }, 1000);
+    localStorage.removeItem('username');
+    window.location.replace('/auth');
   };
 
   return (
-    <header className="dashboard-header">
-      <div className="header-container">
-        <div className="logo-section">
-          <h1>MedSo Dashboard</h1>
+    <header className="bg-blue-900 text-white shadow-md p-4">
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
+        {/* Logo & tiêu đề */}
+        <div className="text-xl font-bold">
+          MedSo Dashboard
         </div>
-        
-        <nav className="nav-section">
-          <ul className="nav-list">
-            <li className="nav-item">
-              <button className="nav-link">Trang chủ</button>
+
+        {/* Navigation */}
+        <nav>
+          <ul className="flex space-x-6">
+            <li>
+              <button className="hover:text-blue-300 transition-colors">
+                Trang chủ
+              </button>
             </li>
-            <li className="nav-item">
-              <button className="nav-link">Báo cáo</button>
+            <li>
+              <button className="hover:text-blue-300 transition-colors">
+                Báo cáo
+              </button>
             </li>
-            <li className="nav-item">
-              <button className="nav-link">Cài đặt</button>
+            <li>
+              <button className="hover:text-blue-300 transition-colors">
+                Cài đặt
+              </button>
             </li>
           </ul>
         </nav>
 
-        <div className="user-section">
-          <div className="user-info">
-            <span className="username">Admin</span>
-            <div className="user-avatar">A</div>
+        {/* User section */}
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center">
+            <span className="text-sm">
+              Xin chào <span className="text-blue-300 font-semibold">@{username || 'Khách'}</span>
+            </span>
+            <div className="w-8 h-8 ml-2 bg-green-500 rounded-full flex items-center justify-center text-lg font-bold">
+              {username ? username[0].toUpperCase() : 'A'}
+            </div>
           </div>
           <button 
-            className="logout-btn"
+            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded transition-colors"
             onClick={handleLogout}
           >
             Đăng xuất
           </button>
         </div>
       </div>
-
-      <style jsx>{`
-        .dashboard-header {
-          background-color: #2c3e50;
-          color: white;
-          padding: 1rem 2rem;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        .header-container {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          max-width: 1200px;
-          margin: 0 auto;
-        }
-        
-        .logo-section h1 {
-          margin: 0;
-          font-size: 1.5rem;
-        }
-        
-        .nav-list {
-          display: flex;
-          list-style: none;
-          margin: 0;
-          padding: 0;
-        }
-        
-        .nav-item {
-          margin: 0 1rem;
-        }
-        
-        .nav-link {
-          background: none;
-          border: none;
-          color: white;
-          cursor: pointer;
-          font-size: 1rem;
-          padding: 0.5rem 1rem;
-          transition: all 0.3s ease;
-        }
-        
-        .nav-link:hover {
-          color: #3498db;
-        }
-        
-        .user-section {
-          display: flex;
-          align-items: center;
-        }
-        
-        .user-info {
-          display: flex;
-          align-items: center;
-          margin-right: 1rem;
-        }
-        
-        .username {
-          margin-right: 0.5rem;
-        }
-        
-        .user-avatar {
-          width: 32px;
-          height: 32px;
-          border-radius: 50%;
-          background-color: #3498db;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-weight: bold;
-        }
-        
-        .logout-btn {
-          background-color: #e74c3c;
-          color: white;
-          border: none;
-          padding: 0.5rem 1rem;
-          border-radius: 4px;
-          cursor: pointer;
-          transition: background-color 0.3s ease;
-        }
-        
-        .logout-btn:hover {
-          background-color: #c0392b;
-        }
-      `}</style>
     </header>
   );
 };
