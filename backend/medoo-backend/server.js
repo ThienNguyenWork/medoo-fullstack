@@ -4,6 +4,8 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const userRoutes = require('./routes/userRoutes');
 const courseRoutes = require('./routes/courseRoutes');
+const User = require("./models/User");
+const bcrypt = require("bcryptjs");
 
 dotenv.config();
 
@@ -29,7 +31,4 @@ mongoose.connect(process.env.MONGODB_URI, {
     console.error('Lỗi kết nối MongoDB chi tiết:', err);
     process.exit(1);
   });
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+

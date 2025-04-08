@@ -38,6 +38,11 @@ const userSchema = new mongoose.Schema({
       message: 'Địa chỉ ví không hợp lệ'
     }
   },
+  role: {
+    type: String,
+    enum: ["user", "admin"],
+    default: "user",
+  },
   isTeacher: {
     type: Boolean,
     default: false
