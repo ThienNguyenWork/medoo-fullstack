@@ -108,12 +108,12 @@ useEffect(() => {
         // Lưu token vào localStorage
         localStorage.setItem('token', data.token);
         localStorage.setItem('username', data.user.username);
-        
+        localStorage.setItem('role', data.user.role);
         // Gọi callback ngay lập tức để cập nhật trạng thái
         if (onLoginSuccess) {
           onLoginSuccess(data.token);
         }
-        
+        console.log('Response from login API:', data);
         // Sau đó mới chuyển hướng
         setTimeout(() => {
           navigate('/dashboard');

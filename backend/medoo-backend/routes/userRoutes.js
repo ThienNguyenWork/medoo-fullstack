@@ -74,7 +74,8 @@ router.post('/register', async (req, res) => {
         username: newUser.username,
         email: newUser.email,
         isTeacher: newUser.isTeacher,
-        walletAddress: newUser.walletAddress
+        walletAddress: newUser.walletAddress,
+        role: newUser.role
       }
     });
   } catch (error) {
@@ -133,7 +134,8 @@ router.post('/login', async (req, res) => {
         username: user.username,
         email: user.email,
         isTeacher: user.isTeacher,
-        walletAddress: user.walletAddress
+        walletAddress: user.walletAddress,
+        role: user.role
       }
     });
   } catch (error) {

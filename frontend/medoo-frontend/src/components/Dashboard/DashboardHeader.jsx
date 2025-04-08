@@ -40,6 +40,7 @@ const DashboardHeader = () => {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('username');
+    localStorage.removeItem('role');
     window.location.replace('/auth');
   };
 

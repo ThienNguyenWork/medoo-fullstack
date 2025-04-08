@@ -38,7 +38,7 @@ exports.register = async (req, res) => {
       email,
       password,
       walletAddress: walletAddress || null,
-      role: "user"
+      role,
     });
 
     await newUser.save();
