@@ -1,6 +1,6 @@
 import React from 'react';
 import { FaArrowRight } from 'react-icons/fa';
-import sphereImage from '../assets/sphere.png';
+import sphereImage from '../../assets/sphere.png';
 import LogoCarousel from './LogoCarousel';
 
 const Hero = () => {

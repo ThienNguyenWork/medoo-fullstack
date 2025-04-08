@@ -1,16 +1,25 @@
+// src/pages/DashboardPage.jsx
 import React from 'react';
-import DashboardHeader from '../components/DashboardHeader';
+import DashboardHeader from '../components/Dashboard/DashboardHeader';
+import DashboardSidebar from '../components/Dashboard/DashboardSidebar';
+import DashboardMainContent from '../components/Dashboard/DashboardMainContent';
 
-const Dashboard = () => {
+const DashboardPage = () => {
   return (
-    <>
+    <div className="flex flex-col h-screen">
+      {/* Header */}
       <DashboardHeader />
-      <main className="dashboard-container">
-        <h1>Bảng điều khiển</h1>
-        {/* Các thành phần dashboard */}
-      </main>
-    </>
+
+      {/* Nội dung chính (Sidebar + MainContent) */}
+      <div className="flex flex-1">
+        {/* Sidebar */}
+        <DashboardSidebar />
+
+        {/* Main Content */}
+        <DashboardMainContent />
+      </div>
+    </div>
   );
 };
 
-export default Dashboard;
+export default DashboardPage;
