@@ -20,15 +20,22 @@ app.use(express.json());
 app.use('/api/users', userRoutes);
 app.use('/api/courses', courseRoutes);
 
+// Kết nối MongoDB
 mongoose.connect(process.env.MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    serverSelectionTimeoutMS: 5000,
-    socketTimeoutMS: 30000
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 30000
+})
+  .then(() => {
+    console.log('✅ Đã kết nối MongoDB thành công!');
+    
+    // ✅ Sau khi kết nối thành công thì bắt đầu chạy server
+    app.listen(PORT, () => {
+      console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
+    });
   })
-  .then(() => console.log('Đã kết nối MongoDB thành công!'))
   .catch(err => {
-    console.error('Lỗi kết nối MongoDB chi tiết:', err);
+    console.error('❌ Lỗi kết nối MongoDB chi tiết:', err);
     process.exit(1);
   });
-
