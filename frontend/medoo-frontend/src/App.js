@@ -6,6 +6,7 @@ import ContentSlider from './components/Homepage/ContentSlider';
 import AIEducationSection from './components/Homepage/AIEducationSection'
 import NFTCollaborationSection from './components/Homepage/NFTCollaborationSection'
 import RoadmapSlider from './components/Homepage/RoadmapSlider'
+import AwardsSection from './components/Homepage/AwardsSection'
 import AuthPage from './pages/userAuth';
 import AOS from 'aos';
 import 'aos/dist/aos.css'; // Import CSS AOS
@@ -137,6 +138,7 @@ return (
             <AIEducationSection />
             <NFTCollaborationSection />
             <RoadmapSlider />
+            <AwardsSection />
           </>
         }
         

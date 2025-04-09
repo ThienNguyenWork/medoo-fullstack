@@ -1,115 +1,201 @@
-// src/components/MainContent.jsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 const MainContent = () => {
-  return (
-    <main className="flex-1 overflow-y-auto p-4 bg-gray-50 min-h-screen">
-      {/* Phần hiển thị thông tin tổng quan */}
-      <div className="max-w-7xl mx-auto">
-        
-        {/* Vùng hiển thị các thẻ thống kê */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="p-4 bg-white shadow-sm rounded-md">
-            <span className="text-gray-600">Tổng khoá học</span>
-            <h2 className="text-2xl font-bold">1</h2>
-          </div>
-          <div className="p-4 bg-white shadow-sm rounded-md">
-            <span className="text-gray-600">Số khóa học đã hoàn thành</span>
-            <h2 className="text-2xl font-bold">0</h2>
-          </div>
-          <div className="p-4 bg-white shadow-sm rounded-md">
-            <span className="text-gray-600">Tổng giờ học</span>
-            <h2 className="text-2xl font-bold">0</h2>
-          </div>
-          <div className="p-4 bg-white shadow-sm rounded-md">
-            <span className="text-gray-600">Xếp hạng</span>
-            <h2 className="text-2xl font-bold">0</h2>
-          </div>
-        </div>
+  const [role, setRole] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-        {/* Bảng thống kê giờ học (có filter Ngày, Tuần, Tháng, Năm, Custom) */}
-        <div className="bg-white rounded-md shadow-sm p-4 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-700">
-              Thống kê số giờ học
-            </h3>
-            {/* Thanh filter */}
-            <div className="space-x-2">
-              <button className="px-3 py-1 text-sm rounded-md bg-blue-100 text-blue-700 hover:bg-blue-200">
-                Ngày
-              </button>
-              <button className="px-3 py-1 text-sm rounded-md bg-blue-100 text-blue-700 hover:bg-blue-200">
-                Tuần
-              </button>
-              <button className="px-3 py-1 text-sm rounded-md bg-blue-100 text-blue-700 hover:bg-blue-200">
-                Tháng
-              </button>
-              <button className="px-3 py-1 text-sm rounded-md bg-blue-100 text-blue-700 hover:bg-blue-200">
-                Năm
-              </button>
-              <button className="px-3 py-1 text-sm rounded-md bg-blue-100 text-blue-700 hover:bg-blue-200">
-                Custom
-              </button>
-            </div>
-          </div>
-          {/* Hiển thị kết quả thống kê */}
-          <div className="text-center py-4">
-            <p className="text-gray-700 text-xl font-bold">0 giờ</p>
-            <p className="text-sm text-green-500">100%</p>
-          </div>
-        </div>
+  // Hàm cập nhật role từ localStorage
+  const updateRoleFromStorage = () => {
+    try {
+      // Đọc key "role" trực tiếp từ localStorage
+      const storedRole = localStorage.getItem('role');
+      if (storedRole === 'admin' || storedRole === 'user') {
+        setRole(storedRole);
+      } else {
+        setRole('guest');
+      }
+    } catch (error) {
+      console.error('Lỗi khi đọc thông tin role từ localStorage:', error);
+      setRole('guest');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-        {/* Khóa học của tôi */}
-        <div className="bg-white rounded-md shadow-sm p-4 mb-6">
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">Khóa học của tôi</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full table-auto border-collapse text-left">
-              <thead>
-                <tr className="bg-blue-100 text-blue-900">
-                  <th className="px-4 py-2">Khóa học của bạn</th>
-                  <th className="px-4 py-2">Ngày tham gia</th>
-                  <th className="px-4 py-2">Tiến trình</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-b hover:bg-gray-50">
-                  <td className="px-4 py-2 text-blue-700">
-                    Hành Trình Chinh Phục Con Đường Tự Do Tài Chính
-                  </td>
-                  <td className="px-4 py-2">1 Th04, 2025</td>
-                  <td className="px-4 py-2">1%</td>
-                </tr>
-                {/* Thêm dữ liệu khác nếu có */}
-              </tbody>
-            </table>
-          </div>
-        </div>
+  useEffect(() => {
+    updateRoleFromStorage();
 
-        {/* Lộ trình đào tạo của tôi */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <div className="bg-white rounded-md shadow-sm p-4">
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">
-              Lộ trình đào tạo của tôi
-            </h3>
-            <div className="text-gray-500">
-              Dữ liệu hiện đang được cập nhật
-            </div>
-          </div>
+    // Theo dõi thay đổi localStorage từ các tab khác (đặc biệt khi role thay đổi)
+    const handleStorageChange = (e) => {
+      if (e.key === 'role') {
+        updateRoleFromStorage();
+      }
+    };
 
-          {/* Kỳ thi sắp diễn ra */}
-          <div className="bg-white rounded-md shadow-sm p-4">
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">
-              Kỳ thi sắp diễn ra
-            </h3>
-            <div className="text-gray-500">
-              Dữ liệu hiện đang được cập nhật
-            </div>
-          </div>
-        </div>
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
+    );
+  }
+
+  // Dashboard cho user
+  const renderUserDashboard = () => (
+    <div className="max-w-7xl mx-auto">
+      <h1 className="text-2xl font-bold mb-6">Trang cá nhân</h1>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <DashboardCard title="Tổng khóa học" value="1" />
+        <DashboardCard title="Khóa học đã hoàn thành" value="0" />
+        <DashboardCard title="Tổng giờ học" value="0" />
+        <DashboardCard title="Xếp hạng" value="0" />
+      </div>
+
+      <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">Thống kê học tập</h2>
+          <div className="flex space-x-2">
+            {['Ngày', 'Tuần', 'Tháng', 'Năm', 'Tùy chọn'].map((item) => (
+              <button 
+                key={item}
+                className="px-3 py-1 text-sm rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100"
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="text-center py-8">
+          <p className="text-3xl font-bold text-gray-800">0 giờ</p>
+          <p className="text-sm text-green-500 mt-1">Tiến trình: 0%</p>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <h2 className="text-xl font-semibold mb-4">Khóa học của tôi</h2>
+        <table className="w-full">
+          <thead>
+            <tr className="bg-gray-100 text-gray-700">
+              <th className="px-4 py-3 text-left">Tên khóa học</th>
+              <th className="px-4 py-3 text-left">Ngày tham gia</th>
+              <th className="px-4 py-3 text-left">Tiến trình</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b hover:bg-gray-50">
+              <td className="px-4 py-3 text-blue-600">
+                Hành Trình Tự Do Tài Chính
+              </td>
+              <td className="px-4 py-3">1/4/2025</td>
+              <td className="px-4 py-3">
+                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                  <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: '1%' }}></div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
+  // Dashboard cho admin
+  const renderAdminDashboard = () => (
+    <div className="max-w-7xl mx-auto">
+      <h1 className="text-2xl font-bold mb-6 text-red-600">Bảng điều khiển quản trị</h1>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <DashboardCard title="Tổng người dùng" value="125" />
+        <DashboardCard title="Khóa học đang hoạt động" value="8" />
+        <DashboardCard title="Doanh thu tháng" value="$3,240" />
+        <DashboardCard title="Lượt truy cập" value="1,024" />
+      </div>
+
+      <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">Quản lý người dùng</h2>
+          <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+            + Thêm người dùng
+          </button>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gray-100 text-gray-700">
+                <th className="px-4 py-3 text-left">ID</th>
+                <th className="px-4 py-3 text-left">Tên</th>
+                <th className="px-4 py-3 text-left">Email</th>
+                <th className="px-4 py-3 text-left">Vai trò</th>
+                <th className="px-4 py-3 text-left">Hành động</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-b hover:bg-gray-50">
+                <td className="px-4 py-3">1</td>
+                <td className="px-4 py-3">Admin User</td>
+                <td className="px-4 py-3">admin@example.com</td>
+                <td className="px-4 py-3">
+                  <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
+                    Admin
+                  </span>
+                </td>
+                <td className="px-4 py-3 space-x-2">
+                  <button className="text-blue-600 hover:text-blue-800">Sửa</button>
+                  <button className="text-red-600 hover:text-red-800">Xóa</button>
+                </td>
+              </tr>
+              <tr className="border-b hover:bg-gray-50">
+                <td className="px-4 py-3">2</td>
+                <td className="px-4 py-3">Người dùng thường</td>
+                <td className="px-4 py-3">user@example.com</td>
+                <td className="px-4 py-3">
+                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                    User
+                  </span>
+                </td>
+                <td className="px-4 py-3 space-x-2">
+                  <button className="text-blue-600 hover:text-blue-800">Sửa</button>
+                  <button className="text-red-600 hover:text-red-800">Xóa</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <main className="flex-1 overflow-y-auto p-6 bg-gray-50 min-h-screen">
+      {/* Sử dụng thẻ div với class hidden để phân quyền hiển thị */}
+      <div className={role !== 'admin' ? 'hidden' : ''}>
+        {renderAdminDashboard()}
+      </div>
+      <div className={role !== 'user' ? 'hidden' : ''}>
+        {renderUserDashboard()}
+      </div>
+      {/* Nếu là guest, bạn có thể xử lý hiển thị thông báo hoặc redirect */}
+      {role === 'guest' && (
+        <div className="text-center text-gray-600 mt-10">
+          <p>Bạn chưa đăng nhập. Vui lòng đăng nhập để xem dashboard.</p>
+        </div>
+      )}
     </main>
   );
 };
+
+// Component phụ cho thẻ thống kê (Dashboard Card)
+const DashboardCard = ({ title, value }) => (
+  <div className="bg-white rounded-lg shadow p-4">
+    <p className="text-gray-600 text-sm">{title}</p>
+    <h3 className="text-2xl font-bold mt-1">{value}</h3>
+  </div>
+);
 
 export default MainContent;
