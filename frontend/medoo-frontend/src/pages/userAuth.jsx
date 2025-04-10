@@ -135,7 +135,6 @@ useEffect(() => {
     setIsLoading(true);
     setMessage({ type: '', text: '' });
 
-    // Kiểm tra mật khẩu xác nhận
     if (registerForm.password !== registerForm.confirmPassword) {
       setMessage({ type: 'error', text: 'Mật khẩu không khớp' });
       setIsLoading(false);
@@ -161,23 +160,18 @@ useEffect(() => {
         throw new Error(data.message || 'Đăng ký thất bại');
       }
 
-      if (data.token) {
-        // Lưu token vào localStorage
-        localStorage.setItem('token', data.token);
-        
-        // Thông báo thành công
-        setMessage({ type: 'success', text: 'Đăng ký thành công!' });
-        
-        // Gọi hàm callback để cập nhật trạng thái xác thực ở component cha
-        if (onLoginSuccess) {
-          onLoginSuccess(data.token);
-        }
-        
-        // Đợi một chút trước khi chuyển trang để đảm bảo token được lưu
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 500);
-      }
+      // Thông báo thành công
+      setMessage({ 
+        type: 'success', 
+        text: 'Đăng ký thành công! Đang chuyển về đăng nhập...' 
+      });
+
+      // Đợi 1.5 giây rồi chuyển về form đăng nhập
+      setTimeout(() => {
+        setActiveTab('login'); // Thay 'login' bằng key của tab đăng nhập
+        setRegisterForm({ username: '', email: '', password: '', confirmPassword: '' }); // Reset form đăng ký
+      }, 1500);
+
     } catch (error) {
       console.error('Register error:', error);
       setMessage({ 
