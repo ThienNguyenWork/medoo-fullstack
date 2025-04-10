@@ -38,9 +38,13 @@ router.get('/:id', async (req, res) => {
 // Create course (teacher only)
 router.post('/', auth, async (req, res) => {
   try {
+    // ❌ Xoá điều kiện kiểm tra role hoặc isTeacher
+    // if (!req.user.isTeacher && req.user.role !== 'admin') {
+    //   return res.status(403).json({ message: 'Chỉ giáo viên hoặc admin mới có thể tạo khóa học' });
+    // }
+
     const { title, description, price, category, thumbnail, content } = req.body;
-    
-    // Create new course
+
     const course = new Course({
       title,
       description,
@@ -50,15 +54,16 @@ router.post('/', auth, async (req, res) => {
       thumbnail,
       content
     });
-    
+
     await course.save();
-    
     res.status(201).json({ course });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Lỗi máy chủ' });
   }
 });
+
+
 
 // Update course (author only)
 router.put('/:id', auth, async (req, res) => {

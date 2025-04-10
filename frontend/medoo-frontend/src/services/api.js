@@ -15,6 +15,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
+    console.log('Gắn token cho request:', token); // ✅ In ra token đang sử dụng
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

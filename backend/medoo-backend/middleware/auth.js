@@ -18,7 +18,7 @@ console.log("Token nhận được từ frontend:", token); // Kiểm tra token 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     // Tìm user và kiểm tra trạng thái tài khoản
-    const user = await User.findById(decoded.userId).select('-password -__v -resetPasswordToken -resetPasswordExpire');
+    const user = await User.findById(decoded.id).select('-password -__v -resetPasswordToken -resetPasswordExpire');
     if (!user) {
       return res.status(401).json({ 
         success: false, 
@@ -41,7 +41,14 @@ console.log("Token nhận được từ frontend:", token); // Kiểm tra token 
     await user.save();
 
     // Gắn thông tin user vào request
-    req.user = { id: user._id, username: user.username, role: user.role, ...user.toObject(), token };
+req.user = {
+  userId: user._id,
+  username: user.username,
+  role: user.role,
+  walletAddress: user.walletAddress,
+  email: user.email
+};
+
     next();
   } catch (error) {
     let message = 'Lỗi xác thực';

@@ -7,6 +7,8 @@ import AIEducationSection from './components/Homepage/AIEducationSection'
 import NFTCollaborationSection from './components/Homepage/NFTCollaborationSection'
 import RoadmapSlider from './components/Homepage/RoadmapSlider'
 import AwardsSection from './components/Homepage/AwardsSection'
+import CourseManagement from './pages/CourseManagement/CourseManagement';
+import CourseDetail from './components/CourseDetail/CourseDetail';
 import AuthPage from './pages/userAuth';
 import AOS from 'aos';
 import 'aos/dist/aos.css'; // Import CSS AOS
@@ -158,7 +160,12 @@ return (
           )
         } 
       />
-      
+      {/* Trang giao diện quản lý khoá học được định nghĩa ở route '/course-management' */}
+      <Route path="/course-management" element={<CourseManagement />} />
+        
+        {/* Trang chi tiết khoá học */}
+        <Route path="/course/:id" element={<CourseDetail />} />
+
       {/* Route mặc định - chuyển hướng về trang chủ */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

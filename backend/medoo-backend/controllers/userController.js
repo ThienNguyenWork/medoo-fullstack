@@ -53,7 +53,6 @@ exports.register = async (req, res) => {
         id: newUser._id,
         username: newUser.username,
         email: newUser.email,
-        isTeacher: newUser.isTeacher,
         walletAddress: newUser.walletAddress,
         role: newUser.role
       }
@@ -101,7 +100,6 @@ exports.login = async (req, res) => {
         id: user._id,
         username: user.username,
         email: user.email,
-        isTeacher: user.isTeacher,
         walletAddress: user.walletAddress,
         role: user.role
       }
@@ -181,33 +179,4 @@ exports.updateUser = async (req, res) => {
   }
 };
 
-// Phân quyền - Nâng cấp thành giáo viên
-exports.becomeTeacher = async (req, res) => {
-  try {
-    const user = await User.findByIdAndUpdate(
-      req.user.id,
-      { $set: { isTeacher: true } },
-      { new: true }
-    ).select('-password');
 
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy người dùng'
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: 'Bạn đã trở thành giáo viên',
-      user
-    });
-  } catch (error) {
-    console.error('Become teacher error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Lỗi khi cập nhật quyền giáo viên',
-      error: error.message
-    });
-  }
-};

@@ -73,7 +73,6 @@ router.post('/register', async (req, res) => {
         id: newUser._id,
         username: newUser.username,
         email: newUser.email,
-        isTeacher: newUser.isTeacher,
         walletAddress: newUser.walletAddress,
         role: newUser.role
       }
@@ -133,7 +132,6 @@ router.post('/login', async (req, res) => {
         id: user._id,
         username: user.username,
         email: user.email,
-        isTeacher: user.isTeacher,
         walletAddress: user.walletAddress,
         role: user.role
       }
@@ -217,40 +215,6 @@ router.get('/profile', auth, async (req, res) => {
   }
 });
 
-// Nâng cấp tài khoản thành giáo viên
-router.post('/become-teacher', auth, async (req, res) => {
-  try {
-    // Kiểm tra xem người dùng đã là giáo viên chưa
-    const user = await User.findById(req.user.userId);
-    
-    if (user.isTeacher) {
-      return res.status(400).json({
-        success: false,
-        message: 'Bạn đã là giáo viên rồi'
-      });
-    }
-    
-    // Cập nhật người dùng thành giáo viên
-    const updatedUser = await User.findByIdAndUpdate(
-      req.user.userId,
-      { isTeacher: true },
-      { new: true }
-    ).select('-password');
-    
-    res.json({
-      success: true,
-      message: 'Bạn đã trở thành giáo viên thành công',
-      user: updatedUser
-    });
-  } catch (error) {
-    console.error('Become teacher error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Lỗi khi nâng cấp tài khoản',
-      error: error.message
-    });
-  }
-});
 
 // Cập nhật thông tin người dùng
 router.put('/update', auth, async (req, res) => {

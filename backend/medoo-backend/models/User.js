@@ -43,18 +43,6 @@ const userSchema = new mongoose.Schema({
     enum: ["user", "admin"],
     default: "user",
   },
-  isTeacher: {
-    type: Boolean,
-    default: false
-  },
-  teacherProfile: {
-    bio: String,
-    qualifications: [String],
-    approved: {
-      type: Boolean,
-      default: false
-    }
-  },
   avatar: {
     type: String,
     default: 'default-avatar.jpg'

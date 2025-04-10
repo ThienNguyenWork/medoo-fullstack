@@ -5,7 +5,7 @@ const router = express.Router();
 // Đăng ký người dùng
 router.post('/register', async (req, res) => {
   try {
-    const { username, email, password, walletAddress, isTeacher } = req.body;
+    const { username, email, password, walletAddress } = req.body;
 
     // Kiểm tra email hoặc username đã tồn tại chưa
     const existingUser = await User.findOne({ $or: [{ email }, { username }] });
@@ -18,8 +18,7 @@ router.post('/register', async (req, res) => {
       username,
       email,
       password, // Mật khẩu sẽ được hash trong `User.js`
-      walletAddress,
-      isTeacher
+      walletAddress
     });
 
     // Lưu vào database
