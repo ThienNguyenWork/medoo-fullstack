@@ -39,7 +39,7 @@ const ContactUs = () => {
       setContent('');
     } catch (error) {
       console.error(error);
-      alert('Có lỗi xảy ra khi gửi thông tin liên hệ.');
+      alert('Tài khoản của bạn đã gửi trước đó rồi. Xin vui lòng gửi lại sau.');
     }
   };
 

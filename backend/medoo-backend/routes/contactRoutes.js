@@ -8,11 +8,24 @@ router.post('/', async (req, res) => {
   const { fullName, email, phone, otherContactMethod, questionType, content } = req.body;
 
   try {
-    // 1. Lưu thông tin liên hệ vào MongoDB
+    // 1. Kiểm tra thời gian gửi gần nhất trong vòng 12 tiếng
+    const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
+    const recentSubmission = await Contact.findOne({
+      email,
+      createdAt: { $gte: twelveHoursAgo },
+    });
+
+    if (recentSubmission) {
+      return res.status(429).json({
+        message: 'Tài khoản của bạn đã gửi trước đó rồi. Xin vui lòng gửi lại sau.',
+      });
+    }
+
+    // 2. Lưu thông tin liên hệ vào MongoDB
     const newContact = new Contact(req.body);
     await newContact.save();
 
-    // 2. Tạo transporter gửi email xác nhận cho chính khách hàng
+    // 3. Tạo transporter gửi email xác nhận cho chính khách hàng
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -36,7 +49,7 @@ router.post('/', async (req, res) => {
       <p>Trân trọng,<br/>Đội ngũ Medoo</p>
     `;
 
-    // 3. Gửi mail tới email khách hàng
+    // 4. Gửi mail tới email khách hàng
     await transporter.sendMail({
       from: `"Medoo Support" <${process.env.GMAIL_USER}>`,
       to: email,
