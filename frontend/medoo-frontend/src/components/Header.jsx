@@ -295,7 +295,7 @@ const Header = () => {
                     className="py-2 px-4 text-sm hover:bg-gray-50 hover:text-purple-600 cursor-pointer"
                     onClick={(e) => {
                       e.stopPropagation();
-                      navigate('/lien-he');
+                      navigate('/contact');
                     }}
                   >
                     Liên hệ

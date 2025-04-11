@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import api from '../services/api';
+import Header from '../components/Header'
 import {
   EnvelopeIcon,
   ChatBubbleBottomCenterTextIcon,
   MapPinIcon,
   PhoneIcon,
 } from '@heroicons/react/24/solid';
+
 
 const ContactUs = () => {
   // State cho các trường form
@@ -44,7 +46,9 @@ const ContactUs = () => {
   };
 
   return (
-    <div className="min-h-screen">
+    <div>
+      <Header />
+      <div className="min-h-screen">
       {/* Banner/tiêu đề */}
       <div
         className="w-full h-60 flex flex-col items-center justify-center text-center"
@@ -223,6 +227,7 @@ const ContactUs = () => {
           </div>
         </form>
       </div>
+    </div>
     </div>
   );
 };
