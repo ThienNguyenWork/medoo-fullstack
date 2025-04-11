@@ -343,131 +343,121 @@ const Header = () => {
       </div>
 
       {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <div className="block md:hidden bg-white border-t border-gray-200 py-2 px-4">
-          <nav className="flex flex-col">
-            {/* Mobile Navigation Items */}
-            <div className="border-b border-gray-100 py-3">
-              <div className="flex justify-between items-center">
-                <span className="font-medium">Khóa Học</span>
-                <FaAngleDown 
-                  className={`text-xs transition-transform ${showDropdown.courses ? 'rotate-180' : ''}`}
-                  onClick={() => toggleDropdown('courses')}
-                />
-              </div>
-              {showDropdown.courses && (
-                <div className="mt-2 pl-4">
-                  <div className="py-2 text-sm">Blockchain cơ bản</div>
-                  <div className="py-2 text-sm">DeFi</div>
-                  <div className="py-2 text-sm">NFT</div>
-                  <div className="py-2 text-sm">Web3 Development</div>
-                </div>
-              )}
-            </div>
-            
-            <div 
-              className="border-b border-gray-100 py-3 cursor-pointer"
-              onClick={() => navigate('/kiem-tien')}
-            >
-              <span className="font-medium">Kiếm Tiền</span>
-            </div>
-            
-            <div 
-              className="border-b border-gray-100 py-3 cursor-pointer"
-              onClick={() => navigate('/airdrop')}
-            >
-              <span className="font-medium">Airdrop</span>
-            </div>
-            
-            <div 
-              className="border-b border-gray-100 py-3 cursor-pointer"
-              onClick={() => navigate('/luyen-thi')}
-            >
-              <span className="font-medium">Luyện Thi</span>
-            </div>
-            
-            <div className="border-b border-gray-100 py-3">
-              <div className="flex justify-between items-center">
-                <span className="font-medium">LMS và Dịch Vụ</span>
-                <FaAngleDown 
-                  className={`text-xs transition-transform ${showDropdown.lms ? 'rotate-180' : ''}`}
-                  onClick={() => toggleDropdown('lms')}
-                />
-              </div>
-              {showDropdown.lms && (
-                <div className="mt-2 pl-4">
-                  <div className="py-2 text-sm">LMS cho doanh nghiệp</div>
-                  <div className="py-2 text-sm">Giải pháp giáo dục</div>
-                  <div className="py-2 text-sm">Tư vấn triển khai</div>
-                </div>
-              )}
-            </div>
-            
-            <div 
-              className="border-b border-gray-100 py-3 cursor-pointer"
-              onClick={() => navigate('/bao-gia')}
-            >
-              <span className="font-medium">Báo giá</span>
-            </div>
-            
-            <div className="py-3">
-              <div className="flex justify-between items-center">
-                <span className="font-medium">Về Medoo</span>
-                <FaAngleDown 
-                  className={`text-xs transition-transform ${showDropdown.about ? 'rotate-180' : ''}`}
-                  onClick={() => toggleDropdown('about')}
-                />
-              </div>
-              {showDropdown.about && (
-                <div className="mt-2 pl-4">
-                  <div 
-                    className="py-2 text-sm cursor-pointer" 
-                    onClick={() => navigate('/gioi-thieu')}
-                  >
-                    Giới thiệu
-                  </div>
-                  <div 
-                    className="py-2 text-sm cursor-pointer"
-                    onClick={() => navigate('/doi-ngu')}
-                  >
-                    Đội ngũ
-                  </div>
-                  <div 
-                    className="py-2 text-sm cursor-pointer"
-                    onClick={() => navigate('/blog')}
-                  >
-                    Blog
-                  </div>
-                  <div 
-                    className="py-2 text-sm cursor-pointer"
-                    onClick={() => navigate('/lien-he')}
-                  >
-                    Liên hệ
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            {/* Mobile Cart and Notification */}
-            <div className="flex justify-between mt-4 border-t border-gray-100 pt-4">
-              <div 
-                className="flex items-center gap-2 cursor-pointer"
-                onClick={() => alert('Giỏ hàng sẽ được triển khai sớm!')}
-              >
-                <FaShoppingCart className="text-gray-500" />
-                <span>Giỏ hàng</span>
-              </div>
-              <div 
-                className="flex items-center gap-2 cursor-pointer"
-                onClick={() => alert('Thông báo sẽ được triển khai sớm!')}
-              >
-                <FaBell className="text-gray-500" />
-                <span>Thông báo</span>
-              </div>
-            </div>
-          </nav>
+{mobileMenuOpen && (
+  <div className="block md:hidden bg-white border-t border-gray-200 py-2 px-4">
+    <nav className="flex flex-col">
+      {/* Mobile Navigation Items cho Khóa Học */}
+      <div className="border-b border-gray-100 py-3">
+        <div className="flex justify-between items-center">
+          {/* Text Khóa Học được click để navigate */}
+          <span
+            className="font-medium cursor-pointer"
+            onClick={() => {
+              navigate('/course-management');
+              setMobileMenuOpen(false);
+            }}
+          >
+            Khóa Học
+          </span>
+          <FaAngleDown
+            className={`text-xs transition-transform cursor-pointer ${
+              showDropdown.courses ? 'rotate-180' : ''
+            }`}
+            onClick={() => toggleDropdown('courses')}
+          />
         </div>
-      )}
+        {showDropdown.courses && (
+          <div className="mt-2 pl-4">
+            <div className="py-2 text-sm">Blockchain cơ bản</div>
+            <div className="py-2 text-sm">DeFi</div>
+            <div className="py-2 text-sm">NFT</div>
+            <div className="py-2 text-sm">Web3 Development</div>
+          </div>
+        )}
+      </div>
+
+      {/* Các mục mobile khác */}
+      <div
+        className="border-b border-gray-100 py-3 cursor-pointer"
+        onClick={() => {
+          navigate('/kiem-tien');
+          setMobileMenuOpen(false);
+        }}
+      >
+        <span className="font-medium">Kiếm Tiền</span>
+      </div>
+
+      <div
+        className="border-b border-gray-100 py-3 cursor-pointer"
+        onClick={() => {
+          navigate('/airdrop');
+          setMobileMenuOpen(false);
+        }}
+      >
+        <span className="font-medium">Airdrop</span>
+      </div>
+
+      <div
+        className="border-b border-gray-100 py-3 cursor-pointer"
+        onClick={() => {
+          navigate('/luyen-thi');
+          setMobileMenuOpen(false);
+        }}
+      >
+        <span className="font-medium">Luyện Thi</span>
+      </div>
+
+      <div
+        className="border-b border-gray-100 py-3 cursor-pointer"
+        onClick={() => {
+          navigate('/lms');
+          setMobileMenuOpen(false);
+        }}
+      >
+        <span className="font-medium">LMS</span>
+      </div>
+
+      <div
+        className="border-b border-gray-100 py-3 cursor-pointer"
+        onClick={() => {
+          navigate('/bao-gia');
+          setMobileMenuOpen(false);
+        }}
+      >
+        <span className="font-medium">Báo Giá</span>
+      </div>
+
+      <div
+        className="border-b border-gray-100 py-3 cursor-pointer"
+        onClick={() => {
+          navigate('/ve-chung-toi');
+          setMobileMenuOpen(false);
+        }}
+      >
+        <span className="font-medium">Về Medoo</span>
+      </div>
+
+      {/* Giỏ hàng và thông báo */}
+      <div className="flex justify-between mt-4 border-t border-gray-100 pt-4">
+        <div
+          className="flex items-center gap-2 cursor-pointer"
+          onClick={() => alert('Giỏ hàng sẽ được triển khai sớm!')}
+        >
+          <FaShoppingCart className="text-gray-500" />
+          <span>Giỏ hàng</span>
+        </div>
+        <div
+          className="flex items-center gap-2 cursor-pointer"
+          onClick={() => alert('Thông báo sẽ được triển khai sớm!')}
+        >
+          <FaBell className="text-gray-500" />
+          <span>Thông báo</span>
+        </div>
+      </div>
+    </nav>
+  </div>
+)}
+
     </header>
   );
 };

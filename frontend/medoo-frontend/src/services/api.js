@@ -1,9 +1,7 @@
-// src/services/api.js
 import axios from 'axios';
 
 const API_URL = 'http://localhost:5001/api';
 
-// Tạo instance axios
 const api = axios.create({
   baseURL: API_URL,
   headers: {
@@ -11,11 +9,10 @@ const api = axios.create({
   }
 });
 
-// Thêm interceptor để tự động gắn token vào header
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
-    console.log('Gắn token cho request:', token); // ✅ In ra token đang sử dụng
+    console.log('Gắn token cho request:', token);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -24,7 +21,6 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// API services
 export const authService = {
   register: (userData) => api.post('/users/register', userData),
   login: (credentials) => api.post('/users/login', credentials),
@@ -34,7 +30,7 @@ export const authService = {
 
 export const courseService = {
   getAllCourses: () => api.get('/courses'),
-  getCourse: (id) => api.get(`/courses/${id}`),
+  getCourse: (id) => api.get(`/courses/${id}`), // ✅ Dùng tên này
   createCourse: (courseData) => api.post('/courses', courseData),
   updateCourse: (id, courseData) => api.put(`/courses/${id}`, courseData),
   deleteCourse: (id) => api.delete(`/courses/${id}`)

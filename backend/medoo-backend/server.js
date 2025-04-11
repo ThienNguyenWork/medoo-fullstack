@@ -20,6 +20,7 @@ app.use(express.json());
 app.use('/api/users', userRoutes);
 app.use('/api/courses', courseRoutes);
 
+
 // Kết nối MongoDB
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,

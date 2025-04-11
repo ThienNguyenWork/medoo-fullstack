@@ -164,7 +164,7 @@ return (
       <Route path="/course-management" element={<CourseManagement />} />
         
         {/* Trang chi tiết khoá học */}
-        <Route path="/course/:id" element={<CourseDetail />} />
+        <Route path="/course/:slugId" element={<CourseDetail />} />
 
       {/* Route mặc định - chuyển hướng về trang chủ */}
       <Route path="*" element={<Navigate to="/" replace />} />

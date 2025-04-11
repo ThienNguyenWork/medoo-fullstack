@@ -1,3 +1,4 @@
+//routes/courseRoutes.js
 const express = require('express');
 const Course = require('../models/Course');
 const auth = require('../middleware/auth');
@@ -74,10 +75,10 @@ router.put('/:id', auth, async (req, res) => {
       return res.status(404).json({ message: 'Không tìm thấy khóa học' });
     }
     
-    // Check if user is the author
-    if (course.author.toString() !== req.user.userId) {
-      return res.status(403).json({ message: 'Không có quyền chỉnh sửa' });
-    }
+   // Check if user is the author OR admin
+if (course.author.toString() !== req.user.userId && req.user.role !== 'admin') {
+  return res.status(403).json({ message: 'Không có quyền chỉnh sửa' });
+}
     
     // Update course fields
     const updateData = req.body;
@@ -103,10 +104,10 @@ router.delete('/:id', auth, async (req, res) => {
       return res.status(404).json({ message: 'Không tìm thấy khóa học' });
     }
     
-    // Check if user is the author
-    if (course.author.toString() !== req.user.userId) {
-      return res.status(403).json({ message: 'Không có quyền xóa' });
-    }
+    // Check if user is the author OR admin
+if (course.author.toString() !== req.user.userId && req.user.role !== 'admin') {
+  return res.status(403).json({ message: 'Không có quyền xóa' });
+}
     
     await course.deleteOne();
     
