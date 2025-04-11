@@ -6,6 +6,7 @@ const userRoutes = require('./routes/userRoutes');
 const courseRoutes = require('./routes/courseRoutes');
 const User = require("./models/User");
 const bcrypt = require("bcryptjs");
+const contactRoutes = require('./routes/contactRoutes');
 
 dotenv.config();
 
@@ -19,7 +20,7 @@ app.use(express.json());
 // Routes
 app.use('/api/users', userRoutes);
 app.use('/api/courses', courseRoutes);
-
+app.use('/api/contacts', contactRoutes);
 
 // Kết nối MongoDB
 mongoose.connect(process.env.MONGODB_URI, {

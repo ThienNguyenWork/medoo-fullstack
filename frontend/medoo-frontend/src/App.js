@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Header from './components/Header';
+import Footer from './components/Footer'
+import ContactUs from './pages/ContactUs';
 import Hero from './components/Homepage/Hero';
 import ContentSlider from './components/Homepage/ContentSlider';
 import AIEducationSection from './components/Homepage/AIEducationSection'
@@ -141,6 +143,7 @@ return (
             <NFTCollaborationSection />
             <RoadmapSlider />
             <AwardsSection />
+            <Footer />
           </>
         }
         
@@ -160,12 +163,35 @@ return (
           )
         } 
       />
-      {/* Trang giao diện quản lý khoá học được định nghĩa ở route '/course-management' */}
-      <Route path="/course-management" element={<CourseManagement />} />
-        
-        {/* Trang chi tiết khoá học */}
-        <Route path="/course/:slugId" element={<CourseDetail />} />
+     <Route 
+  path="/course-management" 
+  element={
+    isAuthenticated || localStorage.getItem('token') ? (
+      <>
+        <Header isAuthenticated={true} onLogout={handleLogout} />
+        <CourseManagement />
+      </>
+    ) : (
+      <Navigate to="/auth" replace />
+    )
+  } 
+/>
 
+<Route 
+  path="/course/:slugId" 
+  element={
+    isAuthenticated || localStorage.getItem('token') ? (
+      <>
+        <Header isAuthenticated={true} onLogout={handleLogout} />
+        <CourseDetail />
+      </>
+    ) : (
+      <Navigate to="/auth" replace />
+    )
+  } 
+/>
+  {/* Route cho trang Contact Us */}
+  <Route path="/contact" element={<ContactUs />} />
       {/* Route mặc định - chuyển hướng về trang chủ */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { courseService } from '../../services/api';
 import { slugify } from '../../utils/slugify';
-import Header from '../../components/Header';
 
 const CourseManagement = () => {
   const role = localStorage.getItem('role');
@@ -101,7 +100,6 @@ const CourseManagement = () => {
 
   return (
     <div>
-        <Header />
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-6 text-center">Quản lý khoá học</h1>
 

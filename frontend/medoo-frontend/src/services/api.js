@@ -1,3 +1,4 @@
+// services/api.js
 import axios from 'axios';
 
 const API_URL = 'http://localhost:5001/api';
@@ -35,5 +36,7 @@ export const courseService = {
   updateCourse: (id, courseData) => api.put(`/courses/${id}`, courseData),
   deleteCourse: (id) => api.delete(`/courses/${id}`)
 };
-
+export const contactService = {
+  submitContact: (data) => api.post('/contacts', data),
+};
 export default api;
