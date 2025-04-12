@@ -1,3 +1,4 @@
+// models/User.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const validator = require('validator');
@@ -62,7 +63,7 @@ const userSchema = new mongoose.Schema({
     default: false
   }
 }, {
-  timestamps: true, // Tự động thêm createdAt, updatedAt
+  timestamps: true,
   toJSON: { virtuals: true },
   toObject: { virtuals: true }
 });
@@ -79,7 +80,7 @@ userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
   
   try {
-    const salt = await bcrypt.genSalt(12); // Tăng độ mạnh salt
+    const salt = await bcrypt.genSalt(12);
     this.password = await bcrypt.hash(this.password, salt);
     next();
   } catch (error) {
@@ -92,16 +93,16 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-// Method generate reset token
+// (Nếu cần) Method generate reset token
 userSchema.methods.getResetPasswordToken = function() {
-  const resetToken = crypto.randomBytes(20).toString('hex');
+  const resetToken = require('crypto').randomBytes(20).toString('hex');
   
-  this.resetPasswordToken = crypto
+  this.resetPasswordToken = require('crypto')
     .createHash('sha256')
     .update(resetToken)
     .digest('hex');
     
-  this.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 phút
+  this.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
   
   return resetToken;
 };

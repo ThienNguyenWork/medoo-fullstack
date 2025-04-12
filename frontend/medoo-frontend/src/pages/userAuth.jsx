@@ -424,7 +424,7 @@ useEffect(() => {
                     name="password"
                     value={registerForm.password}
                     onChange={handleRegisterChange}
-                    placeholder="Tạo mật khẩu (tối thiểu 6 ký tự)"
+                    placeholder="Tạo mật khẩu (tối thiểu 8 ký tự)"
                     required
                   />
                   <button 
@@ -546,7 +546,7 @@ useEffect(() => {
                     name="password"
                     value={resetPasswordForm.password}
                     onChange={handleResetPasswordChange}
-                    placeholder="Tạo mật khẩu mới (tối thiểu 6 ký tự)"
+                    placeholder="Tạo mật khẩu mới (tối thiểu 8 ký tự)"
                     required
                   />
                   <button 
