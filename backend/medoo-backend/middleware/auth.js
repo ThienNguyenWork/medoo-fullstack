@@ -29,7 +29,7 @@ console.log("Token nhận được từ frontend:", token); // Kiểm tra token 
     }
 
     // Kiểm tra email đã xác thực chưa
-    if (process.env.REQUIRE_EMAIL_VERIFICATION === 'true' && !user.emailVerified) {
+    if (process.env.REQUIRE_EMAIL_VERIFICATION === 'true' && !user.emailVerified && user.role !== 'admin') {
       return res.status(403).json({ 
         success: false, 
         message: 'Vui lòng xác thực email trước khi tiếp tục',

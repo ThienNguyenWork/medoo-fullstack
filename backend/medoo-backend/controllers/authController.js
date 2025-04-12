@@ -134,7 +134,7 @@ exports.login = async (req, res) => {
     }
 
     // Kiểm tra xem user đã xác nhận email chưa
-    if (!user.emailVerified) {
+    if (!user.emailVerified && user.role !== 'admin') {
       return res.status(401).json({
         success: false,
         message: 'Vui lòng xác nhận email trước khi đăng nhập'
