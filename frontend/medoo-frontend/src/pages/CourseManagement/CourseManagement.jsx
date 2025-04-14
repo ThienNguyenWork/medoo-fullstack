@@ -16,7 +16,9 @@ const CourseManagement = () => {
     price: 0,
     category: '',
     thumbnail: '',
-    content: [],
+    // Ta có thêm 1 state tạm thời để nhập JSON content
+    contentJson: '[]', 
+    content: []
   });
 
   useEffect(() => {
@@ -39,16 +41,28 @@ const CourseManagement = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
+      // parse content từ contentJson (nếu cần)
+      let parsedContent = [];
+      try {
+        parsedContent = JSON.parse(formData.contentJson);
+      } catch (err) {
+        console.error('Content không đúng định dạng JSON:', err);
+      }
+
+      const dataToSend = {
+        ...formData,
+        content: parsedContent
+      };
+
       let response;
       if (editingCourseId) {
-        response = await courseService.updateCourse(editingCourseId, formData);
+        response = await courseService.updateCourse(editingCourseId, dataToSend);
         if (response.status === 200) {
           setMessage('✅ Cập nhật khoá học thành công!');
         }
       } else {
-        response = await courseService.createCourse(formData);
+        response = await courseService.createCourse(dataToSend);
         if (response.status === 201) {
           setMessage('✅ Tạo khoá học thành công!');
         }
@@ -69,7 +83,8 @@ const CourseManagement = () => {
       price: 0,
       category: '',
       thumbnail: '',
-      content: [],
+      contentJson: '[]',
+      content: []
     });
     setEditingCourseId(null);
   };
@@ -81,7 +96,9 @@ const CourseManagement = () => {
       price: course.price,
       category: course.category,
       thumbnail: course.thumbnail,
-      content: course.content || [],
+      // Stringify content để show lên input
+      contentJson: JSON.stringify(course.content || []),
+      content: course.content || []
     });
     setEditingCourseId(course._id);
     setMessage("🔧 Đang chỉnh sửa khoá học. Nhấn 'Lưu cập nhật' để xác nhận.");
@@ -89,7 +106,6 @@ const CourseManagement = () => {
 
   const handleDelete = async (id) => {
     if (!window.confirm('Bạn có chắc chắn muốn xoá khoá học này không?')) return;
-
     try {
       await courseService.deleteCourse(id);
       await fetchCourses();
@@ -99,7 +115,6 @@ const CourseManagement = () => {
   };
 
   return (
-    <div>
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-6 text-center">Quản lý khoá học</h1>
 
@@ -154,6 +169,14 @@ const CourseManagement = () => {
               onChange={handleChange}
               className="border rounded px-3 py-2"
             />
+            {/* Thêm phần nhập content dưới dạng JSON */}
+            <textarea
+              name="contentJson"
+              placeholder='[{ "title": "Bài 1", "type": "video", "data": "link-video" }...]'
+              value={formData.contentJson}
+              onChange={handleChange}
+              className="border rounded px-3 py-2 h-32"
+            />
             <button
               type="submit"
               className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition"
@@ -164,41 +187,43 @@ const CourseManagement = () => {
         </div>
       )}
 
-{role === 'user' && (
-  <div>
-    <h2 className="text-2xl font-bold mb-6">Khóa học nổi bật</h2>
-    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {courses.map((course) => (
-        <div
-          key={course._id}
-          className="bg-white rounded-xl shadow hover:shadow-lg transition-all overflow-hidden"
-        >
-          <img
-            src={course.thumbnail} // 👈 Sửa ở đây để dùng link trực tiếp
-            alt={course.title}
-            className="h-40 w-full object-cover"
-          />
-          <div className="p-4">
-            <h3 className="text-lg font-semibold line-clamp-2">{course.title}</h3>
-            <p className="text-gray-500 text-sm line-clamp-2">{course.description}</p>
-            <div className="flex justify-between items-center mt-4">
-              <span className="text-purple-600 font-bold">
-                {course.price.toLocaleString()} VNĐ
-              </span>
-              <Link
-                to={`/course/${slugify(course.title)}-${course._id}`}
-                className="text-sm text-purple-600 hover:underline"
+      {/* Phần hiển thị cho user */}
+      {role === 'user' && (
+        <div>
+          <h2 className="text-2xl font-bold mb-6">Khóa học nổi bật</h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {courses.map((course) => (
+              <div
+                key={course._id}
+                className="bg-white rounded-xl shadow hover:shadow-lg transition-all overflow-hidden"
               >
-                Xem chi tiết →
-              </Link>
-            </div>
+                <img
+                  src={course.thumbnail}
+                  alt={course.title}
+                  className="h-40 w-full object-cover"
+                />
+                <div className="p-4">
+                  <h3 className="text-lg font-semibold line-clamp-2">{course.title}</h3>
+                  <p className="text-gray-500 text-sm line-clamp-2">{course.description}</p>
+                  <div className="flex justify-between items-center mt-4">
+                    <span className="text-purple-600 font-bold">
+                      {course.price.toLocaleString()} VNĐ
+                    </span>
+                    <Link
+                      to={`/course/${slugify(course.title)}-${course._id}`}
+                      className="text-sm text-purple-600 hover:underline"
+                    >
+                      Xem chi tiết →
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-      ))}
-    </div>
-  </div>
-)}
+      )}
 
+      {/* Phần hiển thị cho admin (danh sách đã tạo) */}
       {role === 'admin' && (
         <div className="mt-12">
           <h2 className="text-xl font-semibold mb-4">Danh sách khoá học đã tạo</h2>
@@ -227,6 +252,12 @@ const CourseManagement = () => {
                       >
                         Sửa
                       </button>
+                      <Link
+                        to={`/course/${slugify(course.title)}-${course._id}`}
+                        className="bg-green-500 hover:bg-green-600 text-white text-sm px-3 py-1 rounded"
+                      >
+                        Xem
+                      </Link>
                       <button
                         onClick={() => handleDelete(course._id)}
                         className="bg-red-500 hover:bg-red-600 text-white text-sm px-3 py-1 rounded"
@@ -241,7 +272,6 @@ const CourseManagement = () => {
           </div>
         </div>
       )}
-    </div>
     </div>
   );
 };

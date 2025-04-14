@@ -1,7 +1,7 @@
 // services/api.js
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5001/api';
+const API_URL = 'http://localhost:5001/api'; // Thay đổi tuỳ server thực tế
 
 const api = axios.create({
   baseURL: API_URL,
@@ -13,7 +13,6 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
-    console.log('Gắn token cho request:', token);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -31,12 +30,14 @@ export const authService = {
 
 export const courseService = {
   getAllCourses: () => api.get('/courses'),
-  getCourse: (id) => api.get(`/courses/${id}`), // ✅ Dùng tên này
+  getCourse: (id) => api.get(`/courses/${id}`),
   createCourse: (courseData) => api.post('/courses', courseData),
   updateCourse: (id, courseData) => api.put(`/courses/${id}`, courseData),
   deleteCourse: (id) => api.delete(`/courses/${id}`)
 };
+
 export const contactService = {
   submitContact: (data) => api.post('/contacts', data),
 };
+
 export default api;

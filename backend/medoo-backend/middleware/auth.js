@@ -5,8 +5,12 @@ const User = require('../models/User');
 module.exports = async (req, res, next) => {
   try {
     // Lấy token từ header hoặc cookie
-    const token = req.header('Authorization')?.replace('Bearer ', '') || req.cookies?.token;
-console.log("Token nhận được từ frontend:", token); // Kiểm tra token ở backend
+    const token =
+      req.header('Authorization')?.replace('Bearer ', '') ||
+      req.cookies?.token;
+      
+    console.log("Token nhận được từ frontend:", token); // Kiểm tra token ở backend
+    
     if (!token) {
       return res.status(401).json({ 
         success: false, 
@@ -42,13 +46,13 @@ console.log("Token nhận được từ frontend:", token); // Kiểm tra token 
     await user.save();
 
     // Gắn thông tin user vào request
-req.user = {
-  userId: user._id,
-  username: user.username,
-  role: user.role,
-  walletAddress: user.walletAddress,
-  email: user.email
-};
+    req.user = {
+      userId: user._id,
+      username: user.username,
+      role: user.role,
+      walletAddress: user.walletAddress,
+      email: user.email
+    };
 
     next();
   } catch (error) {
@@ -68,6 +72,8 @@ req.user = {
     });
   }
 };
+
+// Hàm kiểm tra quyền admin (bổ sung)
 exports.checkAdmin = (req, res, next) => {
   if (req.user.role !== "admin") {
     return res.status(403).json({ error: "Forbidden: Admin access required" });

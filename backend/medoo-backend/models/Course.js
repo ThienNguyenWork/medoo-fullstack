@@ -1,3 +1,4 @@
+// models/Course.js
 const mongoose = require('mongoose');
 
 const courseSchema = new mongoose.Schema({
@@ -6,10 +7,6 @@ const courseSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
-  description: {
-    type: String,
-    required: true
-  },
   author: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -17,22 +14,31 @@ const courseSchema = new mongoose.Schema({
   },
   price: {
     type: Number,
-    required: true,
     default: 0
   },
   category: {
     type: String,
-    required: true
+    default: ""
   },
   thumbnail: {
-    type: String
+    type: String,
+    default: ""
   },
-  content: [{
-    title: String,
-    description: String,
-    type: String, // 'video', 'text', 'quiz', etc.
-    data: String // URL or content
-  }],
+
+  // ----- TẤT CẢ NỘI DUNG (chapters, lessons, teacher, benefits, courseDetail, reviews,...) -----
+  // ----- sẽ được gom vào 1 mảng content -----
+  content: [
+    {
+      blockType: { type: String },
+      data: mongoose.Schema.Types.Mixed
+    }
+  ],
+
+  // Các trường cơ bản khác
+  description: {
+    type: String,
+    default: ""
+  },
   createdAt: {
     type: Date,
     default: Date.now
