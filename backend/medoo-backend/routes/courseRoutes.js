@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const courseController = require('../controllers/courseController');
+const upload = require('../middleware/upload');
 
 // Lấy tất cả courses
 router.get('/', courseController.getAllCourses);
@@ -18,5 +19,8 @@ router.put('/:id', auth, courseController.updateCourse);
 
 // Xoá course
 router.delete('/:id', auth, courseController.deleteCourse);
+
+// Route upload video (chỉ cho các file video)
+router.post('/upload-video', auth, upload.single('video'), courseController.uploadVideo);
 
 module.exports = router;

@@ -105,3 +105,20 @@ exports.deleteCourse = async (req, res) => {
     res.status(500).json({ message: 'Lỗi máy chủ' });
   }
 };
+
+// Hàm xử lý upload video
+exports.uploadVideo = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Chưa có file nào được upload.' });
+    }
+    // Trả về đường dẫn file đã lưu (lưu ý: nếu bạn đã cấu hình express.static thì đường dẫn này sẽ dùng để truy cập file)
+    res.status(200).json({
+      message: 'Upload video thành công!',
+      videoPath: req.file.path
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Lỗi máy chủ khi upload video', error: error.message });
+  }
+};

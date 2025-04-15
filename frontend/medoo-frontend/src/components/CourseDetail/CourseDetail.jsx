@@ -61,12 +61,12 @@ const CourseDetail = () => {
   const [loading, setLoading] = useState(true);
 
   // Các state được tách ra từ mảng content
-  const [chapters, setChapters] = useState([]);   // Quản lý chương
-  const [lessons, setLessons] = useState([]);       // Quản lý bài học
-  const [teacher, setTeacher] = useState("");       // Giảng viên
-  const [benefits, setBenefits] = useState("");     // Nhập dưới dạng chuỗi, ngăn cách bởi dấu phẩy
-  const [courseDetail, setCourseDetail] = useState(""); // Nhập dưới dạng chuỗi, mỗi dòng là 1 mục
-  const [reviews, setReviews] = useState([]);       // Đánh giá
+  const [chapters, setChapters] = useState([]);       // Quản lý chương
+  const [lessons, setLessons] = useState([]);           // Quản lý bài học
+  const [teacher, setTeacher] = useState("");           // Giảng viên
+  const [benefits, setBenefits] = useState("");         // Nhập dưới dạng chuỗi, ngăn cách bởi dấu phẩy
+  const [courseDetail, setCourseDetail] = useState("");   // Nhập dưới dạng chuỗi, mỗi dòng là 1 mục
+  const [reviews, setReviews] = useState([]);           // Đánh giá
 
   // ----- State tạm cho thao tác Quản lý CHƯƠNG -----
   const [newChapterTitle, setNewChapterTitle] = useState("");
@@ -77,13 +77,23 @@ const CourseDetail = () => {
   const [newLessonTitle, setNewLessonTitle] = useState("");
   const [newLessonDuration, setNewLessonDuration] = useState("");
   const [newLessonChapterId, setNewLessonChapterId] = useState("");
+  // Thêm state cho file video khi tạo bài học
+  const [newLessonVideoFile, setNewLessonVideoFile] = useState(null);
+  // Thêm state cho URL video (nhập thủ công)
+  const [newLessonVideoUrl, setNewLessonVideoUrl] = useState("");
+
   const [editingLessonId, setEditingLessonId] = useState(null);
   const [editingLessonTitle, setEditingLessonTitle] = useState("");
   const [editingLessonDuration, setEditingLessonDuration] = useState("");
   const [editingLessonChapterId, setEditingLessonChapterId] = useState("");
+  // State cho URL video khi chỉnh sửa
+  const [editingLessonVideoUrl, setEditingLessonVideoUrl] = useState("");
 
-  // ----- State để quản lý bật tắt hiển thị bài học của mỗi chương trên giao diện hiển thị nội dung khóa học -----
+  // ----- State để quản lý bật/tắt hiển thị bài học của từng chương -----
   const [expandedChapters, setExpandedChapters] = useState([]);
+
+  // ----- State để hiển thị video khi người dùng nhấn vào bài học (user view) -----
+  const [selectedLesson, setSelectedLesson] = useState(null);
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -91,16 +101,16 @@ const CourseDetail = () => {
         const response = await courseService.getCourse(courseId);
         const fetchedCourse = response.data.course;
         setCourse(fetchedCourse);
-        // Ở DB, mọi dữ liệu riêng đã được gộp vào mảng content
+        // Ở DB, mọi dữ liệu riêng được gom vào mảng content
         const { chapters, lessons, teacher, benefits, courseDetail, reviews } =
           parseContentFromDB(fetchedCourse.content || []);
         setChapters(chapters);
         setLessons(lessons);
         setTeacher(teacher);
-        setBenefits(benefits.join(", ")); // hiển thị dưới dạng chuỗi
-        setCourseDetail(courseDetail.join("\n")); // hiển thị dưới dạng chuỗi (mỗi dòng)
+        setBenefits(benefits.join(", ")); // hiển thị dạng chuỗi
+        setCourseDetail(courseDetail.join("\n")); // hiển thị dạng chuỗi (mỗi dòng)
         setReviews(reviews);
-        // Nếu có chương, đặt mặc định newLessonChapterId là chương đầu tiên để thuận tiện khi thêm bài học
+        // Nếu có chương, đặt mặc định newLessonChapterId là chương đầu tiên
         if (chapters.length > 0) {
           setNewLessonChapterId(chapters[0]._id);
         }
@@ -139,7 +149,7 @@ const CourseDetail = () => {
   const handleDeleteChapter = (chapterId) => {
     if (!window.confirm("Bạn có chắc muốn xóa chương này?")) return;
     setChapters(chapters.filter((ch) => ch._id !== chapterId));
-    // Xoá luôn các bài học thuộc chương bị xoá
+    // Xóa luôn các bài học thuộc chương bị xóa
     setLessons(lessons.filter((ls) => ls.chapterId !== chapterId));
   };
 
@@ -158,19 +168,55 @@ const CourseDetail = () => {
     setEditingChapterTitle("");
   };
 
-  // 2. Quản lý Bài học
-  const handleAddLesson = () => {
+  // 2. Quản lý Bài học (bao gồm upload video)
+  const handleAddLesson = async () => {
     if (!newLessonTitle.trim() || !newLessonChapterId) return;
+
+    let uploadedVideoPath = "";
+    // Nếu người dùng chọn file video, tiến hành upload video
+    if (newLessonVideoFile) {
+      try {
+        const token = localStorage.getItem("token");
+        const formData = new FormData();
+        formData.append("video", newLessonVideoFile);
+
+        const resp = await fetch("http://localhost:5001/api/courses/upload-video", {
+          method: "POST",
+          headers: {
+            // Chỉ cần thêm header Authorization, không set Content-Type cho FormData
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        });
+        const data = await resp.json();
+        if (resp.status === 200) {
+          uploadedVideoPath = data.videoPath;
+        } else {
+          alert(data.message || "Upload video thất bại!");
+          return;
+        }
+      } catch (err) {
+        console.error("Lỗi khi upload video:", err);
+        alert("Lỗi khi upload video!");
+        return;
+      }
+    } else if (newLessonVideoUrl.trim()) {
+      // Nếu không chọn file mà nhập URL thủ công, sử dụng luôn URL đó
+      uploadedVideoPath = newLessonVideoUrl.trim();
+    }
+
     const newLesson = {
       _id: Date.now().toString(),
       title: newLessonTitle,
       duration: newLessonDuration,
       chapterId: newLessonChapterId, // liên kết bài học với chương
+      videoUrl: uploadedVideoPath,   // lưu đường dẫn video nếu có
     };
     setLessons([...lessons, newLesson]);
     setNewLessonTitle("");
     setNewLessonDuration("");
-    // Giữ nguyên newLessonChapterId để tiện thêm bài cho cùng một chương
+    setNewLessonVideoFile(null);
+    setNewLessonVideoUrl("");
   };
 
   const handleDeleteLesson = (lessonId) => {
@@ -183,17 +229,19 @@ const CourseDetail = () => {
     setEditingLessonTitle(lesson.title);
     setEditingLessonDuration(lesson.duration);
     setEditingLessonChapterId(lesson.chapterId);
+    setEditingLessonVideoUrl(lesson.videoUrl || "");
   };
 
   const handleUpdateLesson = () => {
     setLessons(
       lessons.map((ls) =>
         ls._id === editingLessonId
-          ? { 
-              ...ls, 
-              title: editingLessonTitle, 
-              duration: editingLessonDuration, 
-              chapterId: editingLessonChapterId 
+          ? {
+              ...ls,
+              title: editingLessonTitle,
+              duration: editingLessonDuration,
+              chapterId: editingLessonChapterId,
+              videoUrl: editingLessonVideoUrl, // cập nhật URL video nếu có chỉnh sửa
             }
           : ls
       )
@@ -202,25 +250,24 @@ const CourseDetail = () => {
     setEditingLessonTitle("");
     setEditingLessonDuration("");
     setEditingLessonChapterId("");
+    setEditingLessonVideoUrl("");
   };
 
-  // 3. Quản lý Thông tin bổ sung (Teacher, Benefits)  
-  // Khi chỉnh sửa, onChange sẽ cập nhật state
+  // 3. Quản lý Thông tin bổ sung (Teacher, Benefits)
+  // Khi chỉnh sửa, onChange tự cập nhật state
 
   // 4. Quản lý "Bạn sẽ học được"
   // Giá trị của textarea luôn cập nhật vào state courseDetail
 
-  // 5. Quản lý Đánh giá  
+  // 5. Quản lý Đánh giá
   const handleDeleteReview = (reviewId) => {
     if (!window.confirm("Bạn có chắc muốn xóa đánh giá này?")) return;
     setReviews(reviews.filter((rv) => rv._id !== reviewId));
   };
 
-  // --- Nút Lưu TOÀN BỘ ---  
-  // Khi admin nhấn nút "Lưu toàn bộ", các state hiện tại được gom lại thành mảng content và gửi cập nhật
+  // --- Nút Lưu TOÀN BỘ ---
   const handleSaveAll = async () => {
     try {
-      // Chuyển benefits và courseDetail từ chuỗi sang mảng
       const benefitsArray = benefits
         .split(",")
         .map((item) => item.trim())
@@ -229,7 +276,6 @@ const CourseDetail = () => {
         .split("\n")
         .map((item) => item.trim())
         .filter((item) => item);
-      // Build mảng content từ các state
       const newContent = buildContentForDB({
         chapters,
         lessons,
@@ -267,7 +313,7 @@ const CourseDetail = () => {
     <div className="flex flex-col gap-6 p-6 max-w-7xl mx-auto">
       {/* PHẦN THÔNG TIN TỔNG QUAN */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Cột trái (2/3) */}
+        {/* Cột trái (2/3) - Phần người dùng */}
         <div className="md:col-span-2">
           <h1 className="text-3xl font-bold mb-4">{course.title}</h1>
           <div className="flex items-center gap-2 mb-2">
@@ -291,6 +337,19 @@ const CourseDetail = () => {
             )}
           </div>
 
+          {/* Nếu người dùng chọn bài học, hiển thị video ở giữa màn hình (50% chiều rộng) */}
+          {selectedLesson && selectedLesson.videoUrl && (
+            <div className="flex justify-center my-6">
+              <video
+                src={`/${selectedLesson.videoUrl}`}
+                controls
+                className="w-1/2"
+              >
+                Trình duyệt không hỗ trợ video.
+              </video>
+            </div>
+          )}
+
           {/* Nội dung khóa học (Quản lý Chương & Bài học) */}
           <div className="bg-white shadow-md rounded-xl p-4">
             <h2 className="text-xl font-semibold mb-2">Nội dung khóa học</h2>
@@ -313,8 +372,14 @@ const CourseDetail = () => {
                     {lessons
                       .filter((ls) => ls.chapterId === chapter._id)
                       .map((ls) => (
-                        <li key={ls._id}>
-                          {ls.title} - {ls.duration}
+                        <li 
+                          key={ls._id} 
+                          className="mb-2 cursor-pointer"
+                          onClick={() => ls.videoUrl && setSelectedLesson(ls)}
+                        >
+                          <div className="font-medium">
+                            {ls.title} - {ls.duration}
+                          </div>
                         </li>
                       ))}
                   </ul>
@@ -468,6 +533,20 @@ const CourseDetail = () => {
                   </option>
                 ))}
               </select>
+              {/* Input chọn file video */}
+              <input
+                type="file"
+                accept="video/*"
+                onChange={(e) => setNewLessonVideoFile(e.target.files[0])}
+              />
+              {/* Input nhập URL video thủ công */}
+              <input
+                type="text"
+                placeholder="Nhập URL video..."
+                className="border rounded px-3 py-1"
+                value={newLessonVideoUrl}
+                onChange={(e) => setNewLessonVideoUrl(e.target.value)}
+              />
               <button
                 onClick={handleAddLesson}
                 className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded"
@@ -481,6 +560,7 @@ const CourseDetail = () => {
                   <th className="px-4 py-2 border-r">STT</th>
                   <th className="px-4 py-2 border-r">Tên Bài học</th>
                   <th className="px-4 py-2 border-r">Thời lượng</th>
+                  <th className="px-4 py-2 border-r">URL Video</th>
                   <th className="px-4 py-2 border-r">Chương</th>
                   <th className="px-4 py-2">Hành động</th>
                 </tr>
@@ -515,6 +595,18 @@ const CourseDetail = () => {
                     </td>
                     <td className="px-4 py-2 border-r">
                       {editingLessonId === ls._id ? (
+                        <input
+                          type="text"
+                          className="border rounded px-2 py-1 w-full"
+                          value={editingLessonVideoUrl}
+                          onChange={(e) => setEditingLessonVideoUrl(e.target.value)}
+                        />
+                      ) : (
+                        ls.videoUrl || "-"
+                      )}
+                    </td>
+                    <td className="px-4 py-2 border-r">
+                      {editingLessonId === ls._id ? (
                         <select
                           className="border rounded px-2 py-1 w-full"
                           value={editingLessonChapterId}
@@ -527,7 +619,6 @@ const CourseDetail = () => {
                           ))}
                         </select>
                       ) : (
-                        // Hiển thị tiêu đề chương dựa theo chapterId của bài học
                         (chapters.find((ch) => ch._id === ls.chapterId) || {}).title || "Chưa chọn"
                       )}
                     </td>
@@ -546,6 +637,7 @@ const CourseDetail = () => {
                               setEditingLessonTitle("");
                               setEditingLessonDuration("");
                               setEditingLessonChapterId("");
+                              setEditingLessonVideoUrl("");
                             }}
                             className="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded"
                           >
