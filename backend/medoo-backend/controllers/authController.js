@@ -110,7 +110,7 @@ exports.verifyEmail = async (req, res) => {
     await user.save();
 
     // Chuyển hướng người dùng về trang đăng nhập (hoặc trang thông báo thành công)
-    return res.redirect('https://medoo.vercel.app/');
+    return res.redirect('https://medoo.vercel.app/auth');
     // Nếu không chuyển hướng, bạn có thể:
     // res.status(200).json({ success: true, message: 'Xác nhận email thành công!' });
   } catch (error) {
