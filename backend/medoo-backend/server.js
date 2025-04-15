@@ -64,6 +64,7 @@ app.use(express.json());
 app.use('/api/users', authRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/contacts', contactRoutes);
+app.use("/uploads", express.static("uploads"));
 
 // Kết nối MongoDB
 mongoose.connect(process.env.MONGODB_URI, {

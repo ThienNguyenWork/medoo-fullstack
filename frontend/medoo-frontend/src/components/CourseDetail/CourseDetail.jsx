@@ -76,9 +76,14 @@ const CourseDetail = () => {
   // ----- State tạm cho thao tác Quản lý BÀI HỌC -----
   const [newLessonTitle, setNewLessonTitle] = useState("");
   const [newLessonDuration, setNewLessonDuration] = useState("");
+  const [newLessonChapterId, setNewLessonChapterId] = useState("");
   const [editingLessonId, setEditingLessonId] = useState(null);
   const [editingLessonTitle, setEditingLessonTitle] = useState("");
   const [editingLessonDuration, setEditingLessonDuration] = useState("");
+  const [editingLessonChapterId, setEditingLessonChapterId] = useState("");
+
+  // ----- State để quản lý bật tắt hiển thị bài học của mỗi chương trên giao diện hiển thị nội dung khóa học -----
+  const [expandedChapters, setExpandedChapters] = useState([]);
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -95,6 +100,10 @@ const CourseDetail = () => {
         setBenefits(benefits.join(", ")); // hiển thị dưới dạng chuỗi
         setCourseDetail(courseDetail.join("\n")); // hiển thị dưới dạng chuỗi (mỗi dòng)
         setReviews(reviews);
+        // Nếu có chương, đặt mặc định newLessonChapterId là chương đầu tiên để thuận tiện khi thêm bài học
+        if (chapters.length > 0) {
+          setNewLessonChapterId(chapters[0]._id);
+        }
       } catch (error) {
         console.error("Lỗi khi tải khóa học:", error);
       } finally {
@@ -104,6 +113,15 @@ const CourseDetail = () => {
     fetchCourse();
   }, [courseId]);
 
+  // Hàm bật/tắt hiển thị bài học của từng chương
+  const toggleChapter = (chapterId) => {
+    setExpandedChapters((prev) =>
+      prev.includes(chapterId)
+        ? prev.filter((id) => id !== chapterId)
+        : [...prev, chapterId]
+    );
+  };
+
   // --- Các hàm xử lý cho Admin ---
 
   // 1. Quản lý Chương
@@ -112,11 +130,17 @@ const CourseDetail = () => {
     const newChap = { _id: Date.now().toString(), title: newChapterTitle };
     setChapters([...chapters, newChap]);
     setNewChapterTitle("");
+    // Nếu đây là chương đầu tiên, set newLessonChapterId
+    if (chapters.length === 0) {
+      setNewLessonChapterId(newChap._id);
+    }
   };
 
   const handleDeleteChapter = (chapterId) => {
     if (!window.confirm("Bạn có chắc muốn xóa chương này?")) return;
     setChapters(chapters.filter((ch) => ch._id !== chapterId));
+    // Xoá luôn các bài học thuộc chương bị xoá
+    setLessons(lessons.filter((ls) => ls.chapterId !== chapterId));
   };
 
   const startEditChapter = (chapter) => {
@@ -136,16 +160,17 @@ const CourseDetail = () => {
 
   // 2. Quản lý Bài học
   const handleAddLesson = () => {
-    if (!newLessonTitle.trim()) return;
+    if (!newLessonTitle.trim() || !newLessonChapterId) return;
     const newLesson = {
       _id: Date.now().toString(),
       title: newLessonTitle,
       duration: newLessonDuration,
-      // Nếu cần liên kết với chương, bạn có thể thêm trường chapterId ở đây
+      chapterId: newLessonChapterId, // liên kết bài học với chương
     };
     setLessons([...lessons, newLesson]);
     setNewLessonTitle("");
     setNewLessonDuration("");
+    // Giữ nguyên newLessonChapterId để tiện thêm bài cho cùng một chương
   };
 
   const handleDeleteLesson = (lessonId) => {
@@ -157,27 +182,33 @@ const CourseDetail = () => {
     setEditingLessonId(lesson._id);
     setEditingLessonTitle(lesson.title);
     setEditingLessonDuration(lesson.duration);
+    setEditingLessonChapterId(lesson.chapterId);
   };
 
   const handleUpdateLesson = () => {
     setLessons(
       lessons.map((ls) =>
         ls._id === editingLessonId
-          ? { ...ls, title: editingLessonTitle, duration: editingLessonDuration }
+          ? { 
+              ...ls, 
+              title: editingLessonTitle, 
+              duration: editingLessonDuration, 
+              chapterId: editingLessonChapterId 
+            }
           : ls
       )
     );
     setEditingLessonId(null);
     setEditingLessonTitle("");
     setEditingLessonDuration("");
+    setEditingLessonChapterId("");
   };
 
   // 3. Quản lý Thông tin bổ sung (Teacher, Benefits)  
-  // Khi chỉnh sửa, onChange sẽ cập nhật state; không cần nút "Lưu" riêng
-  // (Bạn có thể hiển thị nút “Lưu thông tin bổ sung” nếu muốn cập nhật riêng, nhưng nó sẽ chỉ gán lại giá trị vào state – ở đây các input đã luôn cập nhật)
+  // Khi chỉnh sửa, onChange sẽ cập nhật state
 
-  // 4. Quản lý "Bạn sẽ học được"  
-  // Tương tự: giá trị của textarea luôn cập nhật vào state courseDetail
+  // 4. Quản lý "Bạn sẽ học được"
+  // Giá trị của textarea luôn cập nhật vào state courseDetail
 
   // 5. Quản lý Đánh giá  
   const handleDeleteReview = (reviewId) => {
@@ -268,16 +299,26 @@ const CourseDetail = () => {
             </p>
             {chapters.map((chapter) => (
               <div key={chapter._id} className="mb-4">
-                <h3 className="font-semibold text-md mb-1">• {chapter.title}</h3>
-                <ul className="pl-4 list-disc text-gray-700 text-sm">
-                  {lessons
-                    .filter((ls) => ls.chapterId === chapter._id)
-                    .map((ls) => (
-                      <li key={ls._id}>
-                        {ls.title} - {ls.duration}
-                      </li>
-                    ))}
-                </ul>
+                <div 
+                  onClick={() => toggleChapter(chapter._id)}
+                  className="cursor-pointer flex items-center"
+                >
+                  <span className="mr-1">
+                    {expandedChapters.includes(chapter._id) ? "▼" : "▶"}
+                  </span>
+                  <h3 className="font-semibold text-md">• {chapter.title}</h3>
+                </div>
+                {expandedChapters.includes(chapter._id) && (
+                  <ul className="pl-6 list-disc text-gray-700 text-sm">
+                    {lessons
+                      .filter((ls) => ls.chapterId === chapter._id)
+                      .map((ls) => (
+                        <li key={ls._id}>
+                          {ls.title} - {ls.duration}
+                        </li>
+                      ))}
+                  </ul>
+                )}
               </div>
             ))}
           </div>
@@ -400,7 +441,7 @@ const CourseDetail = () => {
           {/* 2. Quản lý Bài học */}
           <div className="mb-8">
             <h3 className="text-xl font-semibold mb-2">2. Quản lý Bài học</h3>
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex flex-col md:flex-row md:items-center gap-2 mb-4">
               <input
                 type="text"
                 placeholder="Tên bài học..."
@@ -415,6 +456,18 @@ const CourseDetail = () => {
                 value={newLessonDuration}
                 onChange={(e) => setNewLessonDuration(e.target.value)}
               />
+              <select
+                className="border rounded px-3 py-1"
+                value={newLessonChapterId}
+                onChange={(e) => setNewLessonChapterId(e.target.value)}
+              >
+                <option value="">Chọn chương</option>
+                {chapters.map((ch) => (
+                  <option key={ch._id} value={ch._id}>
+                    {ch.title}
+                  </option>
+                ))}
+              </select>
               <button
                 onClick={handleAddLesson}
                 className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded"
@@ -428,6 +481,7 @@ const CourseDetail = () => {
                   <th className="px-4 py-2 border-r">STT</th>
                   <th className="px-4 py-2 border-r">Tên Bài học</th>
                   <th className="px-4 py-2 border-r">Thời lượng</th>
+                  <th className="px-4 py-2 border-r">Chương</th>
                   <th className="px-4 py-2">Hành động</th>
                 </tr>
               </thead>
@@ -459,6 +513,24 @@ const CourseDetail = () => {
                         ls.duration
                       )}
                     </td>
+                    <td className="px-4 py-2 border-r">
+                      {editingLessonId === ls._id ? (
+                        <select
+                          className="border rounded px-2 py-1 w-full"
+                          value={editingLessonChapterId}
+                          onChange={(e) => setEditingLessonChapterId(e.target.value)}
+                        >
+                          {chapters.map((ch) => (
+                            <option key={ch._id} value={ch._id}>
+                              {ch.title}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        // Hiển thị tiêu đề chương dựa theo chapterId của bài học
+                        (chapters.find((ch) => ch._id === ls.chapterId) || {}).title || "Chưa chọn"
+                      )}
+                    </td>
                     <td className="px-4 py-2 text-center space-x-2">
                       {editingLessonId === ls._id ? (
                         <>
@@ -473,6 +545,7 @@ const CourseDetail = () => {
                               setEditingLessonId(null);
                               setEditingLessonTitle("");
                               setEditingLessonDuration("");
+                              setEditingLessonChapterId("");
                             }}
                             className="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded"
                           >
@@ -525,7 +598,6 @@ const CourseDetail = () => {
                 />
               </div>
             </div>
-            {/* Không cần nút riêng cho lưu phần này; giá trị được cập nhật qua onChange */}
           </div>
 
           {/* 4. Quản lý "Bạn sẽ học được" */}
@@ -542,7 +614,6 @@ const CourseDetail = () => {
                 placeholder="Ví dụ: Học cách quản lý thời gian&#10;Nâng cao kỹ năng lãnh đạo..."
               />
             </div>
-            {/* Không cần nút lưu riêng; onChange cập nhật state */}
           </div>
 
           {/* 5. Quản lý Đánh giá */}
