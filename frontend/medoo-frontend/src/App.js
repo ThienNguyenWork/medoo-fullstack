@@ -11,6 +11,7 @@ import RoadmapSlider from './components/Homepage/RoadmapSlider'
 import AwardsSection from './components/Homepage/AwardsSection'
 import CourseManagement from './pages/CourseManagement/CourseManagement';
 import CourseDetail from './components/CourseDetail/CourseDetail';
+import CourseLearning from "./components/CourseDetail/CourseLearning";
 import AuthPage from './pages/userAuth';
 import AOS from 'aos';
 import 'aos/dist/aos.css'; // Import CSS AOS
@@ -189,6 +190,19 @@ return (
       <Navigate to="/auth" replace />
     )
   } 
+/>
+<Route
+  path="/course/:slugId/learning"
+  element={
+    isAuthenticated ? (
+      <>
+        <Header isAuthenticated={true} onLogout={handleLogout} />
+        <CourseLearning />
+      </>
+    ) : (
+      <Navigate to="/auth" replace />
+    )
+  }
 />
   {/* Route cho trang Contact Us */}
   <Route path="/contact" element={<ContactUs />} />

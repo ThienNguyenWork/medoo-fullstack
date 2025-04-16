@@ -1,17 +1,17 @@
-// components/CourseDetail/CourseDetail.jsx
+//components/CourseDetail/CourseDetail.jsx
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { courseService } from "../../services/api";
 import { slugify } from "../../utils/slugify";
-
 // Hàm parse: tách mảng content thành các state riêng
-function parseContentFromDB(contentArray) {
+export function parseContentFromDB(contentArray) {
   let chapters = [];
   let lessons = [];
   let teacher = "";
   let benefits = [];
   let courseDetail = [];
   let reviews = [];
+
   contentArray.forEach((item) => {
     switch (item.blockType) {
       case "chapters":
@@ -36,6 +36,7 @@ function parseContentFromDB(contentArray) {
         break;
     }
   });
+
   return { chapters, lessons, teacher, benefits, courseDetail, reviews };
 }
 
@@ -53,6 +54,8 @@ function buildContentForDB({ chapters, lessons, teacher, benefits, courseDetail,
 
 const CourseDetail = () => {
   const { slugId } = useParams();
+  const navigate = useNavigate();
+
   const role = localStorage.getItem("role") || "user";
   const courseId = slugId.split("-").pop();
 
@@ -62,11 +65,11 @@ const CourseDetail = () => {
 
   // Các state được tách ra từ mảng content
   const [chapters, setChapters] = useState([]);       // Quản lý chương
-  const [lessons, setLessons] = useState([]);           // Quản lý bài học
-  const [teacher, setTeacher] = useState("");           // Giảng viên
-  const [benefits, setBenefits] = useState("");         // Nhập dưới dạng chuỗi, ngăn cách bởi dấu phẩy
-  const [courseDetail, setCourseDetail] = useState("");   // Nhập dưới dạng chuỗi, mỗi dòng là 1 mục
-  const [reviews, setReviews] = useState([]);           // Đánh giá
+  const [lessons, setLessons] = useState([]);         // Quản lý bài học
+  const [teacher, setTeacher] = useState("");         // Giảng viên
+  const [benefits, setBenefits] = useState("");       // Dạng chuỗi, ngăn cách bởi dấu phẩy
+  const [courseDetail, setCourseDetail] = useState(""); // Dạng chuỗi, mỗi dòng là 1 mục
+  const [reviews, setReviews] = useState([]);         // Đánh giá
 
   // ----- State tạm cho thao tác Quản lý CHƯƠNG -----
   const [newChapterTitle, setNewChapterTitle] = useState("");
@@ -91,9 +94,6 @@ const CourseDetail = () => {
 
   // ----- State để quản lý bật/tắt hiển thị bài học của từng chương -----
   const [expandedChapters, setExpandedChapters] = useState([]);
-
-  // ----- State để hiển thị video khi người dùng nhấn vào bài học (user view) -----
-  const [selectedLesson, setSelectedLesson] = useState(null);
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -183,7 +183,6 @@ const CourseDetail = () => {
         const resp = await fetch("http://localhost:5001/api/courses/upload-video", {
           method: "POST",
           headers: {
-            // Chỉ cần thêm header Authorization, không set Content-Type cho FormData
             Authorization: `Bearer ${token}`,
           },
           body: formData,
@@ -241,7 +240,7 @@ const CourseDetail = () => {
               title: editingLessonTitle,
               duration: editingLessonDuration,
               chapterId: editingLessonChapterId,
-              videoUrl: editingLessonVideoUrl, // cập nhật URL video nếu có chỉnh sửa
+              videoUrl: editingLessonVideoUrl,
             }
           : ls
       )
@@ -254,10 +253,10 @@ const CourseDetail = () => {
   };
 
   // 3. Quản lý Thông tin bổ sung (Teacher, Benefits)
-  // Khi chỉnh sửa, onChange tự cập nhật state
+  // => onChange setTeacher / setBenefits
 
   // 4. Quản lý "Bạn sẽ học được"
-  // Giá trị của textarea luôn cập nhật vào state courseDetail
+  // => onChange setCourseDetail
 
   // 5. Quản lý Đánh giá
   const handleDeleteReview = (reviewId) => {
@@ -276,6 +275,7 @@ const CourseDetail = () => {
         .split("\n")
         .map((item) => item.trim())
         .filter((item) => item);
+
       const newContent = buildContentForDB({
         chapters,
         lessons,
@@ -313,7 +313,7 @@ const CourseDetail = () => {
     <div className="flex flex-col gap-6 p-6 max-w-7xl mx-auto">
       {/* PHẦN THÔNG TIN TỔNG QUAN */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Cột trái (2/3) - Phần người dùng */}
+        {/* Cột trái (2/3) */}
         <div className="md:col-span-2">
           <h1 className="text-3xl font-bold mb-4">{course.title}</h1>
           <div className="flex items-center gap-2 mb-2">
@@ -337,18 +337,11 @@ const CourseDetail = () => {
             )}
           </div>
 
-          {/* Nếu người dùng chọn bài học, hiển thị video ở giữa màn hình (50% chiều rộng) */}
-          {selectedLesson && selectedLesson.videoUrl && (
-            <div className="flex justify-center my-6">
-              <video
-                src={`/${selectedLesson.videoUrl}`}
-                controls
-                className="w-1/2"
-              >
-                Trình duyệt không hỗ trợ video.
-              </video>
-            </div>
-          )}
+          {/* 
+            ĐÃ BỎ PHẦN HIỂN THỊ VIDEO KHI NHẤN VÀO BÀI HỌC.
+            Thay vào đó, chúng ta chỉ hiển thị danh sách chương/bài học, 
+            KHÔNG onClick gọi setSelectedLesson nữa.
+          */}
 
           {/* Nội dung khóa học (Quản lý Chương & Bài học) */}
           <div className="bg-white shadow-md rounded-xl p-4">
@@ -372,11 +365,7 @@ const CourseDetail = () => {
                     {lessons
                       .filter((ls) => ls.chapterId === chapter._id)
                       .map((ls) => (
-                        <li 
-                          key={ls._id} 
-                          className="mb-2 cursor-pointer"
-                          onClick={() => ls.videoUrl && setSelectedLesson(ls)}
-                        >
+                        <li key={ls._id} className="mb-2">
                           <div className="font-medium">
                             {ls.title} - {ls.duration}
                           </div>
@@ -400,7 +389,14 @@ const CourseDetail = () => {
             <p className="text-2xl font-bold text-purple-600 mb-3">
               {course.price?.toLocaleString()} VNĐ
             </p>
-            <button className="bg-purple-600 hover:bg-purple-700 text-white font-semibold w-full py-2 rounded-xl mb-5">
+            <button
+              className="bg-purple-600 hover:bg-purple-700 text-white font-semibold w-full py-2 rounded-xl mb-5"
+              onClick={() => {
+                // Điều hướng sang trang học:
+                // "/course/:slugId/learning"
+                navigate(`/course/${slugId}/learning`);
+              }}
+            >
               Mua ngay
             </button>
             <div className="text-sm text-gray-700 space-y-1">
@@ -694,11 +690,9 @@ const CourseDetail = () => {
 
           {/* 4. Quản lý "Bạn sẽ học được" */}
           <div className="mb-8">
-            <h3 className="text-xl font-semibold mb-2">4. Quản lý "Bạn sẽ học được"</h3>
+            <h3 className="text-xl font-semibold mb-2">4. Quản lý &quot;Bạn sẽ học được&quot;</h3>
             <div className="mb-4">
-              <label className="block mb-1">
-                Nhập nội dung (mỗi dòng là 1 mục):
-              </label>
+              <label className="block mb-1">Nhập nội dung (mỗi dòng là 1 mục):</label>
               <textarea
                 value={courseDetail}
                 onChange={(e) => setCourseDetail(e.target.value)}
@@ -744,7 +738,7 @@ const CourseDetail = () => {
             )}
           </div>
 
-          {/* Nút "Lưu toàn bộ" để cập nhật tất cả các nội dung vào DB */}
+          {/* Nút "Lưu toàn bộ" để cập nhật tất cả nội dung vào DB */}
           <div className="text-center">
             <button
               onClick={handleSaveAll}
