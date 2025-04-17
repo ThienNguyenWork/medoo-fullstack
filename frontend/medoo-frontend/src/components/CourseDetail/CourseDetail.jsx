@@ -42,11 +42,27 @@ export function parseContentFromDB(contentArray) {
     }
   });
 
-  return { chapters, lessons, teacher, benefits, courseDetail, reviews, introduction };
+  return {
+    chapters,
+    lessons,
+    teacher,
+    benefits,
+    courseDetail,
+    reviews,
+    introduction,
+  };
 }
 
 // Hàm build: gom lại các state thành mảng content duy nhất
-function buildContentForDB({ chapters, lessons, teacher, benefits, courseDetail, reviews, introduction }) {
+function buildContentForDB({
+  chapters,
+  lessons,
+  teacher,
+  benefits,
+  courseDetail,
+  reviews,
+  introduction,
+}) {
   return [
     { blockType: "chapters", data: chapters },
     { blockType: "lessons", data: lessons },
@@ -105,17 +121,17 @@ const CourseDetail = () => {
         const response = await courseService.getCourse(courseId);
         const fetchedCourse = response.data.course;
         setCourse(fetchedCourse);
-        
-        const { 
-          chapters, 
-          lessons, 
-          teacher, 
-          benefits, 
-          courseDetail, 
+
+        const {
+          chapters,
+          lessons,
+          teacher,
+          benefits,
+          courseDetail,
           reviews,
-          introduction 
+          introduction,
         } = parseContentFromDB(fetchedCourse.content || []);
-        
+
         setChapters(chapters);
         setLessons(lessons);
         setTeacher(teacher);
@@ -123,7 +139,7 @@ const CourseDetail = () => {
         setCourseDetail(courseDetail.join("\n"));
         setReviews(reviews);
         setIntroduction(introduction);
-        
+
         if (chapters.length > 0) {
           setNewLessonChapterId(chapters[0]._id);
         }
@@ -187,13 +203,16 @@ const CourseDetail = () => {
         const formData = new FormData();
         formData.append("video", newLessonVideoFile);
 
-        const resp = await fetch("http://localhost:5001/api/courses/upload-video", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        });
+        const resp = await fetch(
+          "http://localhost:5001/api/courses/upload-video",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            body: formData,
+          }
+        );
         const data = await resp.json();
         if (resp.status === 200) {
           uploadedVideoPath = data.videoPath;
@@ -308,22 +327,27 @@ const CourseDetail = () => {
   };
 
   if (loading) return <p className="p-6">Đang tải chi tiết khóa học...</p>;
-  if (!course) return <p className="p-6 text-red-500">Không tìm thấy khóa học.</p>;
+  if (!course)
+    return <p className="p-6 text-red-500">Không tìm thấy khóa học.</p>;
 
   return (
     <div className="flex flex-col gap-8 px-6 py-8 max-w-7xl mx-auto">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="md:col-span-2">
-          <h1 className="text-3xl font-bold text-gray-800 mb-4">{course.title}</h1>
+          <h1 className="text-3xl font-bold text-gray-800 mb-4">
+            {course.title}
+          </h1>
           <div className="flex items-center gap-2 mb-3">
             <span className="text-gray-600 text-base">
               Giảng viên: {teacher || "Đang cập nhật"}
             </span>
           </div>
 
-          {/* Phần giới thiệu mới */}
-          <div className="bg-white shadow-lg rounded-xl p-6 mb-8 border border-gray-100">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-3">Giới thiệu khóa học</h2>
+          {/* Giới thiệu khóa học */}
+          <div className="mb-8">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-3">
+              Giới thiệu khóa học
+            </h2>
             {introduction ? (
               <p className="text-gray-700 text-base">{introduction}</p>
             ) : (
@@ -331,7 +355,8 @@ const CourseDetail = () => {
             )}
           </div>
 
-          <div className="bg-white shadow-lg rounded-xl p-6 mb-8 border border-gray-100">
+          {/* Bạn sẽ học được những gì? */}
+          <div className="mb-8">
             <h2 className="text-2xl font-semibold text-gray-800 mb-3">
               Bạn sẽ học được những gì?
             </h2>
@@ -366,56 +391,101 @@ const CourseDetail = () => {
             )}
           </div>
 
-          <div className="bg-white shadow-lg rounded-xl p-6 border border-gray-100">
+          {/* Nội dung khóa học */}
+          <div className="mb-8">
             <h2 className="text-2xl font-semibold text-gray-800 mb-3">
               Nội dung khóa học
             </h2>
             <p className="text-sm text-gray-500 mb-4">
-              {chapters.length} chương • {lessons.length} bài học • {course.duration}
+              {chapters.length} chương • {lessons.length} bài học •{" "}
+              {course.duration}
             </p>
-            {chapters.map((chapter) => (
-              <div key={chapter._id} className="mb-5">
+
+            {chapters.map((chapter) => {
+              const isOpen = expandedChapters.includes(chapter._id);
+              return (
                 <div
-                  onClick={() => toggleChapter(chapter._id)}
-                  className="cursor-pointer flex items-center gap-2 transition-colors ease-in-out duration-200 p-2 rounded"
+                  key={chapter._id}
+                  // Bỏ bg-white + shadow-lg, đổi thành bg-gray-50 + border-gray-200
+                  className="bg-gray-50 border border-gray-200 rounded-xl p-6 mb-5"
                 >
-                  <span className="text-lg">
-                    {expandedChapters.includes(chapter._id) ? "▼" : "▶"}
-                  </span>
-                  <h3 className="font-medium text-lg">{chapter.title}</h3>
-                </div>
-                {expandedChapters.includes(chapter._id) && (
-                  <ul className="mt-2 space-y-2 text-gray-700 text-sm">
-                    {lessons
-                      .filter((ls) => ls.chapterId === chapter._id)
-                      .map((ls) => (
-                        <li
-                          key={ls._id}
-                          className="cursor-pointer flex hover:underline hover:decoration-blue-500 hover:decoration-2 hover:text-blue-500"
-                          onClick={() => {}}
-                        >
-                          <span className="mr-2">
+                  {/* Header */}
+                  <div
+                    onClick={() => toggleChapter(chapter._id)}
+                    className="cursor-pointer flex items-center justify-between"
+                  >
+                    <h3 className="font-medium text-lg text-gray-800">
+                      {chapter.title}
+                    </h3>
+                    <span
+                      className={`transition-transform duration-200 ${
+                        isOpen ? "rotate-180" : ""
+                      }`}
+                    >
+                      {/* bạn có thể thay bằng icon ChevronDown từ Heroicons */}
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="w-5 h-5 text-gray-500"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </span>
+                  </div>
+
+                  {/* Thanh phân cách */}
+                  {isOpen && <hr className="my-4 border-t border-gray-200" />}
+
+                  {/* Danh sách bài học */}
+                  {isOpen && (
+                    <ul className="space-y-3 text-gray-700 text-sm">
+                      {lessons
+                        .filter((ls) => ls.chapterId === chapter._id)
+                        .map((ls) => (
+                          <li
+                            key={ls._id}
+                            className="flex items-center gap-2 hover:underline hover:text-blue-600 cursor-pointer"
+                            onClick={() => {}}
+                          >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
-                              className="w-5 h-5 text-gray-800"
-                              fill="none"
+                              className="w-5 h-5 text-gray-500 flex-shrink-0"
+                              fill="currentColor"
                               viewBox="0 0 24 24"
-                              stroke="currentColor"
-                              strokeWidth="2"
                             >
-                              <circle cx="12" cy="12" r="10" />
-                              <polygon points="10,8 16,12 10,16" fill="currentColor" />
+                              <circle
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                              />
+                              <polygon
+                                points="10,8 16,12 10,16"
+                                fill="currentColor"
+                              />
                             </svg>
-                          </span>
-                          <span className="font-medium">
-                            {ls.title} - {ls.duration}
-                          </span>
-                        </li>
-                      ))}
-                  </ul>
-                )}
-              </div>
-            ))}
+                            <span className="flex-1">
+                              {ls.title} – {ls.duration}
+                            </span>
+                            <span className="text-sm text-gray-400">
+                              {ls.duration}
+                            </span>
+                          </li>
+                        ))}
+                    </ul>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -477,8 +547,12 @@ const CourseDetail = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-2 border border-gray-200">STT</th>
-                  <th className="px-4 py-2 border border-gray-200">Tên Chương</th>
-                  <th className="px-4 py-2 border border-gray-200">Hành động</th>
+                  <th className="px-4 py-2 border border-gray-200">
+                    Tên Chương
+                  </th>
+                  <th className="px-4 py-2 border border-gray-200">
+                    Hành động
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -496,7 +570,9 @@ const CourseDetail = () => {
                           type="text"
                           className="border border-gray-300 rounded px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-purple-400"
                           value={editingChapterTitle}
-                          onChange={(e) => setEditingChapterTitle(e.target.value)}
+                          onChange={(e) =>
+                            setEditingChapterTitle(e.target.value)
+                          }
                         />
                       ) : (
                         ch.title
@@ -592,10 +668,16 @@ const CourseDetail = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-2 border border-gray-200">STT</th>
-                  <th className="px-4 py-2 border border-gray-200">Tên Bài học</th>
-                  <th className="px-4 py-2 border border-gray-200">Thời lượng</th>
+                  <th className="px-4 py-2 border border-gray-200">
+                    Tên Bài học
+                  </th>
+                  <th className="px-4 py-2 border border-gray-200">
+                    Thời lượng
+                  </th>
                   <th className="px-4 py-2 border border-gray-200">Chương</th>
-                  <th className="px-4 py-2 border border-gray-200">Hành động</th>
+                  <th className="px-4 py-2 border border-gray-200">
+                    Hành động
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -613,7 +695,9 @@ const CourseDetail = () => {
                           type="text"
                           className="border border-gray-300 rounded px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-purple-400"
                           value={editingLessonTitle}
-                          onChange={(e) => setEditingLessonTitle(e.target.value)}
+                          onChange={(e) =>
+                            setEditingLessonTitle(e.target.value)
+                          }
                         />
                       ) : (
                         ls.title
@@ -771,9 +855,7 @@ const CourseDetail = () => {
                     <th className="px-4 py-2 border border-gray-200">
                       Nội dung
                     </th>
-                    <th className="px-4 py-2 border border-gray-200">
-                      Số sao
-                    </th>
+                    <th className="px-4 py-2 border border-gray-200">Số sao</th>
                     <th className="px-4 py-2 border border-gray-200">
                       Hành động
                     </th>
