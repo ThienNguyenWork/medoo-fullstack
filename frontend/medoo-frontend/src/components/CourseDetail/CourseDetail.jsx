@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { courseService } from "../../services/api";
 import { slugify } from "../../utils/slugify";
+
 // Hàm parse: tách mảng content thành các state riêng
 export function parseContentFromDB(contentArray) {
   let chapters = [];
@@ -11,6 +12,7 @@ export function parseContentFromDB(contentArray) {
   let benefits = [];
   let courseDetail = [];
   let reviews = [];
+  let introduction = "";
 
   contentArray.forEach((item) => {
     switch (item.blockType) {
@@ -32,16 +34,19 @@ export function parseContentFromDB(contentArray) {
       case "reviews":
         reviews = item.data || [];
         break;
+      case "introduction":
+        introduction = item.data || "";
+        break;
       default:
         break;
     }
   });
 
-  return { chapters, lessons, teacher, benefits, courseDetail, reviews };
+  return { chapters, lessons, teacher, benefits, courseDetail, reviews, introduction };
 }
 
 // Hàm build: gom lại các state thành mảng content duy nhất
-function buildContentForDB({ chapters, lessons, teacher, benefits, courseDetail, reviews }) {
+function buildContentForDB({ chapters, lessons, teacher, benefits, courseDetail, reviews, introduction }) {
   return [
     { blockType: "chapters", data: chapters },
     { blockType: "lessons", data: lessons },
@@ -49,6 +54,7 @@ function buildContentForDB({ chapters, lessons, teacher, benefits, courseDetail,
     { blockType: "benefits", data: benefits },
     { blockType: "courseDetail", data: courseDetail },
     { blockType: "reviews", data: reviews },
+    { blockType: "introduction", data: introduction },
   ];
 }
 
@@ -64,12 +70,13 @@ const CourseDetail = () => {
   const [loading, setLoading] = useState(true);
 
   // Các state được tách ra từ mảng content
-  const [chapters, setChapters] = useState([]);       // Quản lý chương
-  const [lessons, setLessons] = useState([]);         // Quản lý bài học
-  const [teacher, setTeacher] = useState("");         // Giảng viên
-  const [benefits, setBenefits] = useState("");       // Dạng chuỗi, ngăn cách bởi dấu phẩy
-  const [courseDetail, setCourseDetail] = useState(""); // Dạng chuỗi, mỗi dòng là 1 mục
-  const [reviews, setReviews] = useState([]);         // Đánh giá
+  const [chapters, setChapters] = useState([]);
+  const [lessons, setLessons] = useState([]);
+  const [teacher, setTeacher] = useState("");
+  const [benefits, setBenefits] = useState("");
+  const [courseDetail, setCourseDetail] = useState("");
+  const [reviews, setReviews] = useState([]);
+  const [introduction, setIntroduction] = useState("");
 
   // ----- State tạm cho thao tác Quản lý CHƯƠNG -----
   const [newChapterTitle, setNewChapterTitle] = useState("");
@@ -80,16 +87,13 @@ const CourseDetail = () => {
   const [newLessonTitle, setNewLessonTitle] = useState("");
   const [newLessonDuration, setNewLessonDuration] = useState("");
   const [newLessonChapterId, setNewLessonChapterId] = useState("");
-  // Thêm state cho file video khi tạo bài học
   const [newLessonVideoFile, setNewLessonVideoFile] = useState(null);
-  // Thêm state cho URL video (nhập thủ công)
   const [newLessonVideoUrl, setNewLessonVideoUrl] = useState("");
 
   const [editingLessonId, setEditingLessonId] = useState(null);
   const [editingLessonTitle, setEditingLessonTitle] = useState("");
   const [editingLessonDuration, setEditingLessonDuration] = useState("");
   const [editingLessonChapterId, setEditingLessonChapterId] = useState("");
-  // State cho URL video khi chỉnh sửa
   const [editingLessonVideoUrl, setEditingLessonVideoUrl] = useState("");
 
   // ----- State để quản lý bật/tắt hiển thị bài học của từng chương -----
@@ -101,16 +105,25 @@ const CourseDetail = () => {
         const response = await courseService.getCourse(courseId);
         const fetchedCourse = response.data.course;
         setCourse(fetchedCourse);
-        // Ở DB, mọi dữ liệu riêng được gom vào mảng content
-        const { chapters, lessons, teacher, benefits, courseDetail, reviews } =
-          parseContentFromDB(fetchedCourse.content || []);
+        
+        const { 
+          chapters, 
+          lessons, 
+          teacher, 
+          benefits, 
+          courseDetail, 
+          reviews,
+          introduction 
+        } = parseContentFromDB(fetchedCourse.content || []);
+        
         setChapters(chapters);
         setLessons(lessons);
         setTeacher(teacher);
-        setBenefits(benefits.join(", ")); // hiển thị dạng chuỗi
-        setCourseDetail(courseDetail.join("\n")); // hiển thị dạng chuỗi (mỗi dòng)
+        setBenefits(benefits.join(", "));
+        setCourseDetail(courseDetail.join("\n"));
         setReviews(reviews);
-        // Nếu có chương, đặt mặc định newLessonChapterId là chương đầu tiên
+        setIntroduction(introduction);
+        
         if (chapters.length > 0) {
           setNewLessonChapterId(chapters[0]._id);
         }
@@ -123,7 +136,6 @@ const CourseDetail = () => {
     fetchCourse();
   }, [courseId]);
 
-  // Hàm bật/tắt hiển thị bài học của từng chương
   const toggleChapter = (chapterId) => {
     setExpandedChapters((prev) =>
       prev.includes(chapterId)
@@ -132,15 +144,12 @@ const CourseDetail = () => {
     );
   };
 
-  // --- Các hàm xử lý cho Admin ---
-
   // 1. Quản lý Chương
   const handleAddChapter = () => {
     if (!newChapterTitle.trim()) return;
     const newChap = { _id: Date.now().toString(), title: newChapterTitle };
     setChapters([...chapters, newChap]);
     setNewChapterTitle("");
-    // Nếu đây là chương đầu tiên, set newLessonChapterId
     if (chapters.length === 0) {
       setNewLessonChapterId(newChap._id);
     }
@@ -149,7 +158,6 @@ const CourseDetail = () => {
   const handleDeleteChapter = (chapterId) => {
     if (!window.confirm("Bạn có chắc muốn xóa chương này?")) return;
     setChapters(chapters.filter((ch) => ch._id !== chapterId));
-    // Xóa luôn các bài học thuộc chương bị xóa
     setLessons(lessons.filter((ls) => ls.chapterId !== chapterId));
   };
 
@@ -168,12 +176,11 @@ const CourseDetail = () => {
     setEditingChapterTitle("");
   };
 
-  // 2. Quản lý Bài học (bao gồm upload video)
+  // 2. Quản lý Bài học
   const handleAddLesson = async () => {
     if (!newLessonTitle.trim() || !newLessonChapterId) return;
 
     let uploadedVideoPath = "";
-    // Nếu người dùng chọn file video, tiến hành upload video
     if (newLessonVideoFile) {
       try {
         const token = localStorage.getItem("token");
@@ -200,7 +207,6 @@ const CourseDetail = () => {
         return;
       }
     } else if (newLessonVideoUrl.trim()) {
-      // Nếu không chọn file mà nhập URL thủ công, sử dụng luôn URL đó
       uploadedVideoPath = newLessonVideoUrl.trim();
     }
 
@@ -208,8 +214,8 @@ const CourseDetail = () => {
       _id: Date.now().toString(),
       title: newLessonTitle,
       duration: newLessonDuration,
-      chapterId: newLessonChapterId, // liên kết bài học với chương
-      videoUrl: uploadedVideoPath,   // lưu đường dẫn video nếu có
+      chapterId: newLessonChapterId,
+      videoUrl: uploadedVideoPath,
     };
     setLessons([...lessons, newLesson]);
     setNewLessonTitle("");
@@ -252,12 +258,6 @@ const CourseDetail = () => {
     setEditingLessonVideoUrl("");
   };
 
-  // 3. Quản lý Thông tin bổ sung (Teacher, Benefits)
-  // => onChange setTeacher / setBenefits
-
-  // 4. Quản lý "Bạn sẽ học được"
-  // => onChange setCourseDetail
-
   // 5. Quản lý Đánh giá
   const handleDeleteReview = (reviewId) => {
     if (!window.confirm("Bạn có chắc muốn xóa đánh giá này?")) return;
@@ -283,6 +283,7 @@ const CourseDetail = () => {
         benefits: benefitsArray,
         courseDetail: courseDetailArray,
         reviews,
+        introduction,
       });
 
       const updateData = {
@@ -311,9 +312,7 @@ const CourseDetail = () => {
 
   return (
     <div className="flex flex-col gap-8 px-6 py-8 max-w-7xl mx-auto">
-      {/* PHẦN THÔNG TIN TỔNG QUAN */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Cột trái (2/3) */}
         <div className="md:col-span-2">
           <h1 className="text-3xl font-bold text-gray-800 mb-4">{course.title}</h1>
           <div className="flex items-center gap-2 mb-3">
@@ -321,9 +320,17 @@ const CourseDetail = () => {
               Giảng viên: {teacher || "Đang cập nhật"}
             </span>
           </div>
-          <p className="text-gray-700 text-base mb-6">{course.description}</p>
-  
-          {/* "Bạn sẽ học được những gì?" */}
+
+          {/* Phần giới thiệu mới */}
+          <div className="bg-white shadow-lg rounded-xl p-6 mb-8 border border-gray-100">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-3">Giới thiệu khóa học</h2>
+            {introduction ? (
+              <p className="text-gray-700 text-base">{introduction}</p>
+            ) : (
+              <p className="text-gray-500">Chưa có thông tin giới thiệu.</p>
+            )}
+          </div>
+
           <div className="bg-white shadow-lg rounded-xl p-6 mb-8 border border-gray-100">
             <h2 className="text-2xl font-semibold text-gray-800 mb-3">
               Bạn sẽ học được những gì?
@@ -358,8 +365,7 @@ const CourseDetail = () => {
               <p className="text-gray-500">Chưa có thông tin.</p>
             )}
           </div>
-  
-          {/* Nội dung khóa học */}
+
           <div className="bg-white shadow-lg rounded-xl p-6 border border-gray-100">
             <h2 className="text-2xl font-semibold text-gray-800 mb-3">
               Nội dung khóa học
@@ -369,7 +375,6 @@ const CourseDetail = () => {
             </p>
             {chapters.map((chapter) => (
               <div key={chapter._id} className="mb-5">
-                {/* CHƯƠNG: Xóa hover */}
                 <div
                   onClick={() => toggleChapter(chapter._id)}
                   className="cursor-pointer flex items-center gap-2 transition-colors ease-in-out duration-200 p-2 rounded"
@@ -380,7 +385,6 @@ const CourseDetail = () => {
                   <h3 className="font-medium text-lg">{chapter.title}</h3>
                 </div>
                 {expandedChapters.includes(chapter._id) && (
-                  // BÀI HỌC: Sửa lại để gạch chân liền mạch
                   <ul className="mt-2 space-y-2 text-gray-700 text-sm">
                     {lessons
                       .filter((ls) => ls.chapterId === chapter._id)
@@ -414,8 +418,7 @@ const CourseDetail = () => {
             ))}
           </div>
         </div>
-  
-        {/* Sidebar (KHOÁ HỌC) */}
+
         <div className="md:col-span-1">
           <div className="bg-white shadow-lg rounded-2xl p-6 border border-gray-200 sticky top-4 cursor-pointer hover:shadow-2xl transition-shadow duration-300">
             <img
@@ -437,22 +440,20 @@ const CourseDetail = () => {
             <div className="text-sm text-gray-700 space-y-1">
               <div>🧩 {lessons.length} bài học</div>
               <div>⏱ {course.duration}</div>
-              <div>👨‍🏫 Giảng viên: {teacher || "Đang cập nhật"}</div>
+              <div>👨🏫 Giảng viên: {teacher || "Đang cập nhật"}</div>
               <div>📂 Danh mục: {course.category}</div>
               <div>Slug: {slugify(course.title)}</div>
             </div>
           </div>
         </div>
       </div>
-  
-      {/* PHẦN QUẢN TRỊ (Admin) */}
+
       {role === "admin" && (
         <div className="bg-white shadow-lg rounded-xl p-8 border border-gray-200">
           <h2 className="text-2xl font-bold text-gray-800 mb-6">
             Quản lý chi tiết khóa học
           </h2>
-  
-          {/* 1. Quản lý Chương */}
+
           <div className="mb-10">
             <h3 className="text-xl font-semibold text-gray-800 mb-3">
               1. Quản lý Chương
@@ -542,8 +543,7 @@ const CourseDetail = () => {
               </tbody>
             </table>
           </div>
-  
-          {/* 2. Quản lý Bài học */}
+
           <div className="mb-10">
             <h3 className="text-xl font-semibold text-gray-800 mb-3">
               2. Quản lý Bài học
@@ -575,7 +575,6 @@ const CourseDetail = () => {
                   </option>
                 ))}
               </select>
-              {/* Bỏ trường nhập URL video */}
               <input
                 type="file"
                 accept="video/*"
@@ -697,13 +696,23 @@ const CourseDetail = () => {
               </tbody>
             </table>
           </div>
-  
-          {/* 3. Quản lý Thông tin bổ sung (Teacher, Benefits) */}
+
           <div className="mb-10">
             <h3 className="text-xl font-semibold text-gray-800 mb-3">
               3. Quản lý Thông tin bổ sung
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-gray-700 mb-1">
+                  Giới thiệu khóa học:
+                </label>
+                <textarea
+                  value={introduction}
+                  onChange={(e) => setIntroduction(e.target.value)}
+                  className="border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-400 w-full h-32"
+                  placeholder="Nhập nội dung giới thiệu tổng quan về khóa học..."
+                />
+              </div>
               <div>
                 <label className="block text-gray-700 mb-1">
                   Giảng viên (Teacher):
@@ -728,8 +737,7 @@ const CourseDetail = () => {
               </div>
             </div>
           </div>
-  
-          {/* 4. Quản lý "Bạn sẽ học được" */}
+
           <div className="mb-10">
             <h3 className="text-xl font-semibold text-gray-800 mb-3">
               4. Quản lý "Bạn sẽ học được"
@@ -746,8 +754,7 @@ const CourseDetail = () => {
               />
             </div>
           </div>
-  
-          {/* 5. Quản lý Đánh giá */}
+
           <div className="mb-10">
             <h3 className="text-xl font-semibold text-gray-800 mb-3">
               5. Quản lý Đánh giá
@@ -801,8 +808,7 @@ const CourseDetail = () => {
               </table>
             )}
           </div>
-  
-          {/* Nút "Lưu toàn bộ" */}
+
           <div className="text-center">
             <button
               onClick={handleSaveAll}
@@ -815,11 +821,6 @@ const CourseDetail = () => {
       )}
     </div>
   );
-  
-  
-  
-  
-  
 };
 
 export default CourseDetail;
