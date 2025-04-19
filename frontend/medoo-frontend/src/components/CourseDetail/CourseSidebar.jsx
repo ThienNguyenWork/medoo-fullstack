@@ -1,4 +1,3 @@
-//Components/CourseDetail/CourseSidebar.jsx
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -19,7 +18,7 @@ const CourseSidebar = ({ course, lessons, teacher, slugId }) => {
         <button
           className="bg-purple-600 hover:bg-purple-700 text-white font-semibold w-full py-3 rounded-xl shadow-md transition-colors ease-in-out duration-200 mb-6"
           onClick={() => {
-            navigate(`/course/${slugId}/learning`);
+            navigate(`/course/${slugId}/payment`);
           }}
         >
           Mua ngay

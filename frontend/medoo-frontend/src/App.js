@@ -12,6 +12,7 @@ import AwardsSection from './components/Homepage/AwardsSection'
 import CourseManagement from './pages/CourseManagement/CourseManagement';
 import CourseDetail from './components/CourseDetail/CourseDetail';
 import CourseLearning from "./components/CourseDetail/CourseLearning";
+import PaymentPage from './pages/PaymentPage';
 import AuthPage from './pages/userAuth';
 import AOS from 'aos';
 import 'aos/dist/aos.css'; // Import CSS AOS
@@ -204,6 +205,7 @@ return (
     )
   }
 />
+<Route path="/course/:slugId/payment" element={<PaymentPage />} />
   {/* Route cho trang Contact Us */}
   <Route path="/contact" element={<ContactUs />} />
       {/* Route mặc định - chuyển hướng về trang chủ */}
