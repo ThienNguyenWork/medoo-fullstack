@@ -1,8 +1,16 @@
+/* components/CourseSidebar.jsx */
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { parseDuration, formatDuration } from '../../utils/durationUtils';
 
 const CourseSidebar = ({ course, lessons, teacher, slugId }) => {
   const navigate = useNavigate();
+  // Tính tổng thời lượng từ lessons nếu course.duration chưa có
+  const totalMinutes = lessons.reduce(
+    (sum, ls) => sum + parseDuration(ls.duration),
+    0
+  );
+  const computedDuration = formatDuration(totalMinutes);
 
   return (
     <div className="md:col-span-1">
@@ -17,15 +25,13 @@ const CourseSidebar = ({ course, lessons, teacher, slugId }) => {
         </p>
         <button
           className="bg-purple-600 hover:bg-purple-700 text-white font-semibold w-full py-3 rounded-xl shadow-md transition-colors ease-in-out duration-200 mb-6"
-          onClick={() => {
-            navigate(`/course/${slugId}/payment`);
-          }}
+          onClick={() => navigate(`/course/${slugId}/payment`)}
         >
           Mua ngay
         </button>
         <div className="text-sm text-gray-700 space-y-1">
           <div>🧩 {lessons.length} bài học</div>
-          <div>⏱ {course.duration}</div>
+          <div>⏱ {course.duration || computedDuration}</div>
           <div>👨🏫 Giảng viên: {teacher || "Đang cập nhật"}</div>
           <div>📂 Danh mục: {course.category}</div>
         </div>
