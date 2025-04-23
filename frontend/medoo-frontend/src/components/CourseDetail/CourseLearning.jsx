@@ -1,13 +1,19 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { courseService } from "../../services/api";
+import { parseDuration, formatDuration } from "../../utils/durationUtils";
 import { parseContentFromDB } from "./CourseDetail";
+import debounce from "lodash.debounce";
+
+const parseDurationSeconds = (str) => parseDuration(str) * 60;
+const MAX_SKIP_SECONDS = 15;
 
 const CourseLearning = () => {
   const { slugId } = useParams();
   const courseId = slugId.split("-").pop();
 
-  const [course, setCourse] = useState(null);
+  // State management
+  const [loading, setLoading] = useState(true);
   const [chapters, setChapters] = useState([]);
   const [lessons, setLessons] = useState([]);
   const [expandedChapters, setExpandedChapters] = useState([]);
@@ -15,68 +21,136 @@ const CourseLearning = () => {
   const [introduction, setIntroduction] = useState("");
   const [courseDetail, setCourseDetail] = useState("");
   const [related, setRelated] = useState([]);
+  const [progress, setProgress] = useState({});
+  const [hasPlayed, setHasPlayed] = useState(false);
+  const [lastPosition, setLastPosition] = useState(0);
+  const videoRef = useRef(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
+  // Debounce function for progress updates
+  const debouncedProgress = useRef(
+    debounce(async (courseId, lessonId, watchedSeconds) => {
       try {
-        const resp = await courseService.getCourse(courseId);
-        const fetched = resp.data.course;
-        setCourse(fetched);
-        const { chapters, lessons, introduction, courseDetail } = parseContentFromDB(
-          fetched.content || []
-        );
-        setChapters(chapters);
-        setLessons(lessons);
-        setIntroduction(introduction);
-        setCourseDetail(courseDetail.join("\n"));
-      } catch (err) {
-        console.error(err);
+        await courseService.updateProgress(courseId, lessonId, watchedSeconds);
+      } catch (error) {
+        console.error("Lỗi cập nhật tiến trình:", error);
+      }
+    }, 1500)
+  ).current;
+
+  // Fetch course data and progress
+  useEffect(() => {
+    const fetchCourseData = async () => {
+      try {
+        // Load course content
+        const { data: courseData } = await courseService.getCourse(courseId);
+        const parsedContent = parseContentFromDB(courseData.course.content || []);
+        
+        setChapters(parsedContent.chapters);
+        setLessons(parsedContent.lessons);
+        setIntroduction(parsedContent.introduction);
+        setCourseDetail(parsedContent.courseDetail.join("\n"));
+
+        // Load related courses
+        const { data: allCourses } = await courseService.getAllCourses();
+        setRelated(allCourses.courses.filter(c => c._id !== courseId).slice(0, 3));
+
+        // Load user progress
+        const { data: progressData } = await courseService.getProgress(courseId);
+        const initialProgress = progressData.progress || {};
+        
+        // Find first uncompleted lesson
+        const firstUncompleted = parsedContent.lessons.find(lesson => {
+          const lessonDuration = parseDurationSeconds(lesson.duration);
+          return (initialProgress[lesson._id] || 0) < lessonDuration;
+        }) || parsedContent.lessons[0];
+
+        setSelectedLesson(firstUncompleted);
+        setProgress(initialProgress);
+        setLastPosition(initialProgress[firstUncompleted?._id] || 0);
+      } catch (error) {
+        console.error("Lỗi tải dữ liệu:", error);
+      } finally {
+        setLoading(false);
       }
     };
-    fetchData();
+
+    fetchCourseData();
   }, [courseId]);
 
-  useEffect(() => {
-    const fetchRelated = async () => {
-      try {
-        const resp = await courseService.getAllCourses();
-        setRelated(resp.data.courses.filter(c => c._id !== courseId).slice(0, 3));
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    fetchRelated();
-  }, [courseId]);
+  // Video time update handler
+  const handleTimeUpdate = useCallback((e) => {
+    if (!selectedLesson || !hasPlayed) return;
+    
+    const currentTime = Math.floor(e.target.currentTime);
+    const lessonDuration = parseDurationSeconds(selectedLesson.duration);
 
-  useEffect(() => {
-    if (chapters.length && lessons.length) {
-      const firstLs = lessons.find(ls => ls.chapterId === chapters[0]._id);
-      if (firstLs) setSelectedLesson(firstLs);
+    // Prevent excessive skipping
+    if (currentTime > lastPosition + MAX_SKIP_SECONDS) {
+      e.target.currentTime = lastPosition;
+      alert(`Bạn chỉ được skip tối đa ${MAX_SKIP_SECONDS} giây`);
+      return;
     }
-  }, [chapters, lessons]);
 
-  const toggleChapter = id => {
+    // Update progress state
+    const clampedTime = Math.min(currentTime, lessonDuration);
+    setLastPosition(clampedTime);
+    setProgress(prev => {
+      const newProgress = { ...prev, [selectedLesson._id]: clampedTime };
+      debouncedProgress(courseId, selectedLesson._id, clampedTime);
+      return newProgress;
+    });
+  }, [selectedLesson, hasPlayed, lastPosition, courseId, debouncedProgress]);
+
+  // Video ended handler
+  const handleEnded = useCallback(() => {
+    if (!selectedLesson) return;
+    const fullDuration = parseDurationSeconds(selectedLesson.duration);
+    setProgress(prev => ({
+      ...prev,
+      [selectedLesson._id]: fullDuration
+    }));
+    debouncedProgress(courseId, selectedLesson._id, fullDuration);
+  }, [selectedLesson, courseId, debouncedProgress]);
+
+  // Chapter expansion toggle
+  const toggleChapter = (chapterId) => {
     setExpandedChapters(prev =>
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+      prev.includes(chapterId) 
+        ? prev.filter(id => id !== chapterId) 
+        : [...prev, chapterId]
     );
   };
 
-  if (!course) return <p className="p-4 text-white">Đang tải...</p>;
+  // Calculate progress percentages
+  const totalSeconds = lessons.reduce(
+    (sum, lesson) => sum + parseDurationSeconds(lesson.duration), 0
+  );
+  const watchedSeconds = Object.entries(progress).reduce(
+    (sum, [id, secs]) => {
+      const lesson = lessons.find(l => l._id === id);
+      return sum + Math.min(secs, lesson ? parseDurationSeconds(lesson.duration) : 0);
+    }, 0
+  );
+  const progressPercent = totalSeconds ? Math.round((watchedSeconds / totalSeconds) * 100) : 0;
+
+  if (loading) return <div className="p-4 text-white">Đang tải nội dung...</div>;
 
   return (
     <div className="min-h-screen">
-
-      {/* Div 1: full-width dark background including container */}
+      {/* Video Section */}
       <div className="bg-[#1E293B] text-white h-[calc(100vh-4rem)]">
         <div className="max-w-7xl mx-auto h-full px-4 py-6 flex lg:flex-row flex-col gap-6">
-
-          {/* Video */}
+          {/* Video Player */}
           <div className="lg:w-[70%] bg-black rounded-lg overflow-hidden">
             <div className="relative pt-[56.25%]">
               {selectedLesson?.videoUrl ? (
                 <video
+                  ref={videoRef}
                   src={`/${selectedLesson.videoUrl}`}
                   controls
+                  onPlay={() => setHasPlayed(true)}
+                  onTimeUpdate={handleTimeUpdate}
+                  onEnded={handleEnded}
                   className="absolute inset-0 w-full h-full object-cover"
                 />
               ) : (
@@ -87,41 +161,78 @@ const CourseLearning = () => {
             </div>
           </div>
 
-          {/* Sidebar Nội dung khóa học */}
+          {/* Course Content Sidebar */}
           <div className="lg:w-[30%] flex flex-col">
             <div className="bg-[#111827] rounded-lg flex-1 flex flex-col overflow-hidden">
-              <div className="px-4 py-3">
+              <div className="px-4 py-3 border-b border-gray-700">
                 <h3 className="text-lg font-semibold">Nội dung khóa học</h3>
-                <p className="text-sm text-gray-300 mt-1">
-                  {chapters.length} chương • {lessons.length} bài học
-                </p>
+                <div className="mt-2">
+                  <div className="w-full bg-gray-700 rounded-full h-2">
+                    <div 
+                      className="h-2 bg-purple-500 rounded-full transition-all duration-300"
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {progressPercent}% hoàn thành • Đã xem {formatDuration(Math.floor(watchedSeconds/60))}
+                  </p>
+                </div>
               </div>
-              <div className="p-4 flex-1 overflow-y-auto">
-                {chapters.map(ch => (
-                  <div key={ch._id} className="mb-3">
-                    <div
-                      onClick={() => toggleChapter(ch._id)}
-                      className="flex justify-between p-2 hover:bg-[#2D3748] rounded cursor-pointer"
+
+              <div className="flex-1 overflow-y-auto p-4">
+                {chapters.map(chapter => (
+                  <div key={chapter._id} className="mb-3">
+                    <div 
+                      onClick={() => toggleChapter(chapter._id)}
+                      className="flex justify-between items-center p-2 hover:bg-gray-800 rounded cursor-pointer"
                     >
                       <div className="flex items-center">
-                        <span className="mr-2">{expandedChapters.includes(ch._id) ? '▼' : '▶'}</span>
-                        <span className="line-clamp-1">{ch.title}</span>
+                        <span className="mr-2">
+                          {expandedChapters.includes(chapter._id) ? '▼' : '▶'}
+                        </span>
+                        <span className="line-clamp-1">{chapter.title}</span>
                       </div>
                       <span className="text-xs text-gray-400">
-                        {lessons.filter(ls => ls.chapterId === ch._id).length} bài
+                        {lessons.filter(l => l.chapterId === chapter._id).length} bài
                       </span>
                     </div>
-                    {expandedChapters.includes(ch._id) && (
-                      <div className="ml-6 pl-2 border-l-2 border-gray-600">
-                        {lessons.filter(ls => ls.chapterId === ch._id).map(ls => (
-                          <div
-                            key={ls._id}
-                            onClick={() => ls.videoUrl && setSelectedLesson(ls)}
-                            className="p-2 hover:bg-gray-700/30 rounded cursor-pointer text-sm"
-                          >
-                            {ls.title}
-                          </div>
-                        ))}
+
+                    {expandedChapters.includes(chapter._id) && (
+                      <div className="ml-4 pl-2 border-l-2 border-gray-600">
+                        {lessons
+                          .filter(l => l.chapterId === chapter._id)
+                          .map(lesson => (
+                            <div
+                              key={lesson._id}
+                              onClick={() => {
+                                setHasPlayed(false);
+                                setSelectedLesson(lesson);
+                              }}
+                              className={`p-2 text-sm rounded cursor-pointer hover:bg-gray-700/30 ${
+                                selectedLesson?._id === lesson._id 
+                                  ? 'bg-purple-500/10 border-l-2 border-purple-400' 
+                                  : ''
+                              }`}
+                            >
+                              <div className="flex justify-between items-center">
+                                <span>{lesson.title}</span>
+                                <span className="text-xs text-gray-400">
+                                  {formatDuration(parseDuration(lesson.duration))}
+                                </span>
+                              </div>
+                              <div className="h-1 bg-gray-700 mt-1 rounded-full">
+                                <div
+                                  className="h-full bg-purple-500 rounded-full"
+                                  style={{
+                                    width: `${Math.min(
+                                      ((progress[lesson._id] || 0) / parseDurationSeconds(lesson.duration)) * 100,
+                                      100
+                                    )}%`
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          ))}
                       </div>
                     )}
                   </div>
@@ -132,81 +243,75 @@ const CourseLearning = () => {
         </div>
       </div>
 
-      {/* Div 2: white background wrapper */}
+      {/* Course Details Section */}
       <div className="bg-white">
         <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-
-          {/* Tabs card centered */}
-          <div className="bg-white rounded-lg shadow mx-auto w-full lg:w-fit">
-            <div className="flex">
-              {['Tổng quan', 'Tài liệu', 'Hỏi & Đáp', 'Sự kiện', 'Đánh giá'].map(tab => (
-                <button key={tab} className="px-6 py-3 text-gray-600 hover:text-gray-800">
+          <div className="bg-white rounded-lg shadow-lg mx-auto w-full lg:w-fit">
+            <div className="flex overflow-x-auto">
+              {['Tổng quan', 'Tài liệu', 'Hỏi & Đáp', 'Sự kiện', 'Đánh giá'].map((tab) => (
+                <button
+                  key={tab}
+                  className="px-6 py-3 text-gray-600 hover:text-purple-600 whitespace-nowrap"
+                >
                   {tab}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Content and Sidebar Related */}
           <div className="flex flex-col lg:flex-row gap-6">
-            {/* Main content */}
             <div className="flex-1 space-y-8">
-              <div>
-                <h2 className="text-2xl font-semibold mb-4 text-gray-800">Giới thiệu</h2>
-                <p className="text-gray-700 leading-relaxed">
+              <section>
+                <h2 className="text-2xl font-semibold mb-4 text-gray-800">Giới thiệu khóa học</h2>
+                <p className="text-gray-600 leading-relaxed whitespace-pre-line">
                   {introduction}
                 </p>
-              </div>
-              <div>
-                <h2 className="text-2xl font-semibold mb-4 text-gray-800">Lợi ích từ khóa học</h2>
-                <ul className="space-y-4">
-                  {courseDetail.split("\n").map((item, idx) => (
-                    <li key={idx} className="flex items-start">
-                      <svg
-                        className="w-5 h-5 text-green-500 flex-shrink-0 mr-3 mt-1"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
+              </section>
+
+              <section>
+                <h2 className="text-2xl font-semibold mb-4 text-gray-800">Bạn sẽ học được gì?</h2>
+                <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {courseDetail.split("\n").map((benefit, index) => (
+                    <li key={index} className="flex items-start p-3 bg-gray-50 rounded-lg">
+                      <svg className="w-5 h-5 text-green-500 flex-shrink-0 mr-3 mt-1" 
+                           fill="none" 
+                           stroke="currentColor" 
+                           viewBox="0 0 24 24">
+                        <path strokeLinecap="round" 
+                              strokeLinejoin="round" 
+                              strokeWidth={2} 
+                              d="M5 13l4 4L19 7" />
                       </svg>
-                      <span className="text-gray-700">{item}</span>
+                      <span className="text-gray-700">{benefit}</span>
                     </li>
                   ))}
                 </ul>
-              </div>
+              </section>
             </div>
 
-            {/* Sidebar Related Courses */}
-            <div className="w-full lg:w-[30%]">
+            <aside className="lg:w-[30%]">
               <h3 className="text-xl font-semibold mb-4 text-gray-800">Khóa học liên quan</h3>
               <div className="space-y-4">
-                {related.map(rc => (
+                {related.map(course => (
                   <Link
-                    key={rc._id}
-                    to={`/course/${rc.title.replace(/\s+/g, '-').toLowerCase()}-${rc._id}`}
-                    className="flex items-center gap-3 hover:bg-gray-100 p-2 rounded"
+                    key={course._id}
+                    to={`/course/${course.title.replace(/\s+/g, '-').toLowerCase()}-${course._id}`}
+                    className="flex items-start gap-4 p-3 hover:bg-gray-50 rounded-lg transition-colors"
                   >
-                    <img
-                      src={rc.thumbnail}
-                      alt={rc.title}
-                      className="w-12 h-12 object-cover rounded"
-                    />
+                    <img src={course.thumbnail} 
+                         alt={course.title}
+                         className="w-16 h-16 object-cover rounded-lg" />
                     <div>
-                      <p className="text-gray-800 font-medium line-clamp-2">{rc.title}</p>
-                      <span className="text-purple-600 font-bold">{rc.price.toLocaleString()} VNĐ</span>
+                      <h4 className="font-medium text-gray-800 line-clamp-2">{course.title}</h4>
+                      <p className="text-sm text-purple-600 font-semibold mt-1">
+                        {course.price?.toLocaleString() || 'Miễn phí'} VNĐ
+                      </p>
                     </div>
                   </Link>
                 ))}
               </div>
-            </div>
+            </aside>
           </div>
-
         </div>
       </div>
     </div>
