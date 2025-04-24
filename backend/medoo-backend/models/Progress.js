@@ -4,18 +4,20 @@ const progressSchema = new mongoose.Schema({
   userId: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: "User", 
-    required: true 
+    required: true,
+    unique: true // Chỉ 1 document duy nhất cho mỗi user
   },
-  courseId: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: "Course", 
-    required: true 
-  },
-  lessons: {
+  courses: {
     type: Map,
     of: new mongoose.Schema({
-      watchedSeconds: { type: Number, default: 0 },
-      completed:      { type: Boolean, default: false }
+      lessons: {
+        type: Map,
+        of: new mongoose.Schema({
+          watchedSeconds: { type: Number, default: 0 },
+          completed: { type: Boolean, default: false }
+        }, { _id: false })
+      },
+      lastAccessed: { type: Date, default: Date.now }
     }, { _id: false }),
     default: {}
   }
