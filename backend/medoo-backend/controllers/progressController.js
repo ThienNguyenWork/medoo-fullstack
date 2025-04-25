@@ -5,14 +5,24 @@ exports.updateProgress = async (req, res) => {
     const { courseId, lessonId, watchedSeconds, totalDuration } = req.body;
     const userId = req.user.userId;
 
+    // Lấy tiến trình hiện tại
+    const existingProgress = await Progress.findOne({ userId });
+    const currentLessonProgress = existingProgress?.courses?.get(courseId)?.lessons?.get(lessonId);
+    
+    // Chỉ cập nhật nếu watchedSeconds mới lớn hơn giá trị hiện tại
+    const newWatchedSeconds = Math.max(
+      currentLessonProgress?.watchedSeconds || 0, 
+      Math.min(watchedSeconds, totalDuration)
+    );
+
     // Tính toán trạng thái completed
     const COMPLETION_THRESHOLD = 0.85;
     const isCompleted = totalDuration > 0 && 
-    (watchedSeconds / totalDuration) >= COMPLETION_THRESHOLD;
+      (newWatchedSeconds / totalDuration) >= COMPLETION_THRESHOLD;
 
     const update = {
       $set: {
-        [`courses.${courseId}.lessons.${lessonId}.watchedSeconds`]: watchedSeconds,
+        [`courses.${courseId}.lessons.${lessonId}.watchedSeconds`]: newWatchedSeconds,
         [`courses.${courseId}.lessons.${lessonId}.completed`]: isCompleted,
         [`courses.${courseId}.lessons.${lessonId}.totalDuration`]: totalDuration,
         [`courses.${courseId}.lastAccessed`]: new Date()

@@ -92,6 +92,9 @@ const CourseLearning = () => {
     const currentTime = Math.floor(e.target.currentTime);
     const lessonDuration = parseDurationSeconds(selectedLesson.duration);
 
+    // Chỉ xử lý khi thời gian hiện tại lớn hơn lastPosition
+    if (currentTime <= lastPosition) return;
+
     // Prevent excessive skipping
     if (currentTime > lastPosition + MAX_SKIP_SECONDS) {
       e.target.currentTime = lastPosition;
@@ -109,6 +112,13 @@ const CourseLearning = () => {
       lessonDuration
     );
   }, [selectedLesson, hasPlayed, lastPosition, courseId, debouncedProgress]);
+
+  // Cập nhật lastPosition khi chọn lesson mới
+  useEffect(() => {
+    if (selectedLesson) {
+      setLastPosition(progress[selectedLesson._id]?.watchedSeconds || 0);
+    }
+  }, [selectedLesson, progress]);
 
   // Video ended handler
   const handleEnded = useCallback(() => {
@@ -235,7 +245,7 @@ const CourseLearning = () => {
                                   {formatDuration(parseDuration(lesson.duration))}
                                 </span>
                               </div>
-                              <div className="h-1 bg-gray-700 mt-1 rounded-full">
+                              <div className="h-1 bg-gray-700 mt-1 rounded-full flex items-center">
                                 <div
                                   className="h-full bg-purple-500 rounded-full"
                                   style={{
