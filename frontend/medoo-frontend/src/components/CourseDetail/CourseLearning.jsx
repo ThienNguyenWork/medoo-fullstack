@@ -28,9 +28,18 @@ const CourseLearning = () => {
 
   // Debounce function for progress updates
   const debouncedProgress = useRef(
-    debounce(async (courseId, lessonId, watchedSeconds) => {
+    debounce(async (courseId, lessonId, watchedSeconds, totalDuration) => {
       try {
-        await courseService.updateProgress(courseId, lessonId, watchedSeconds);
+        await courseService.updateProgress(
+          courseId, 
+          lessonId, 
+          watchedSeconds,
+          totalDuration
+        );
+        
+        // Refresh progress after update
+        const { data: newProgress } = await courseService.getProgress(courseId);
+        setProgress(newProgress.progress || {});
       } catch (error) {
         console.error("Lỗi cập nhật tiến trình:", error);
       }
@@ -60,13 +69,12 @@ const CourseLearning = () => {
         
         // Find first uncompleted lesson
         const firstUncompleted = parsedContent.lessons.find(lesson => {
-          const lessonDuration = parseDurationSeconds(lesson.duration);
-          return (initialProgress[lesson._id] || 0) < lessonDuration;
+          return !initialProgress[lesson._id]?.completed;
         }) || parsedContent.lessons[0];
 
         setSelectedLesson(firstUncompleted);
         setProgress(initialProgress);
-        setLastPosition(initialProgress[firstUncompleted?._id] || 0);
+        setLastPosition(initialProgress[firstUncompleted?._id]?.watchedSeconds || 0);
       } catch (error) {
         console.error("Lỗi tải dữ liệu:", error);
       } finally {
@@ -94,22 +102,24 @@ const CourseLearning = () => {
     // Update progress state
     const clampedTime = Math.min(currentTime, lessonDuration);
     setLastPosition(clampedTime);
-    setProgress(prev => {
-      const newProgress = { ...prev, [selectedLesson._id]: clampedTime };
-      debouncedProgress(courseId, selectedLesson._id, clampedTime);
-      return newProgress;
-    });
+    debouncedProgress(
+      courseId, 
+      selectedLesson._id, 
+      clampedTime,
+      lessonDuration
+    );
   }, [selectedLesson, hasPlayed, lastPosition, courseId, debouncedProgress]);
 
   // Video ended handler
   const handleEnded = useCallback(() => {
     if (!selectedLesson) return;
-    const fullDuration = parseDurationSeconds(selectedLesson.duration);
-    setProgress(prev => ({
-      ...prev,
-      [selectedLesson._id]: fullDuration
-    }));
-    debouncedProgress(courseId, selectedLesson._id, fullDuration);
+    const lessonDuration = parseDurationSeconds(selectedLesson.duration);
+    debouncedProgress(
+      courseId, 
+      selectedLesson._id, 
+      lessonDuration,
+      lessonDuration
+    );
   }, [selectedLesson, courseId, debouncedProgress]);
 
   // Chapter expansion toggle
@@ -125,13 +135,18 @@ const CourseLearning = () => {
   const totalSeconds = lessons.reduce(
     (sum, lesson) => sum + parseDurationSeconds(lesson.duration), 0
   );
+
   const watchedSeconds = Object.entries(progress).reduce(
-    (sum, [id, secs]) => {
+    (sum, [id, data]) => {
       const lesson = lessons.find(l => l._id === id);
-      return sum + Math.min(secs, lesson ? parseDurationSeconds(lesson.duration) : 0);
+      const maxSeconds = lesson ? parseDurationSeconds(lesson.duration) : 0;
+      return sum + Math.min(data?.watchedSeconds || 0, maxSeconds);
     }, 0
   );
-  const progressPercent = totalSeconds ? Math.round((watchedSeconds / totalSeconds) * 100) : 0;
+
+  const progressPercent = totalSeconds > 0 
+    ? Math.round((watchedSeconds / totalSeconds) * 100)
+    : 0;
 
   if (loading) return <div className="p-4 text-white">Đang tải nội dung...</div>;
 
@@ -225,11 +240,15 @@ const CourseLearning = () => {
                                   className="h-full bg-purple-500 rounded-full"
                                   style={{
                                     width: `${Math.min(
-                                      ((progress[lesson._id] || 0) / parseDurationSeconds(lesson.duration)) * 100,
+                                      ((progress[lesson._id]?.watchedSeconds || 0) / 
+                                      parseDurationSeconds(lesson.duration)) * 100,
                                       100
                                     )}%`
                                   }}
                                 />
+                                {progress[lesson._id]?.completed && (
+                                  <span className="text-xs text-green-500 ml-2">✓</span>
+                                )}
                               </div>
                             </div>
                           ))}

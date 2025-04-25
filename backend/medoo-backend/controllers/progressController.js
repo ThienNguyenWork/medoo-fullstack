@@ -2,13 +2,19 @@ const Progress = require("../models/Progress");
 
 exports.updateProgress = async (req, res) => {
   try {
-    const { courseId, lessonId, watchedSeconds, completed } = req.body;
+    const { courseId, lessonId, watchedSeconds, totalDuration } = req.body;
     const userId = req.user.userId;
+
+    // Tính toán trạng thái completed
+    const COMPLETION_THRESHOLD = 0.85;
+    const isCompleted = totalDuration > 0 && 
+    (watchedSeconds / totalDuration) >= COMPLETION_THRESHOLD;
 
     const update = {
       $set: {
         [`courses.${courseId}.lessons.${lessonId}.watchedSeconds`]: watchedSeconds,
-        [`courses.${courseId}.lessons.${lessonId}.completed`]: completed ?? false,
+        [`courses.${courseId}.lessons.${lessonId}.completed`]: isCompleted,
+        [`courses.${courseId}.lessons.${lessonId}.totalDuration`]: totalDuration,
         [`courses.${courseId}.lastAccessed`]: new Date()
       }
     };
@@ -34,19 +40,36 @@ exports.getProgress = async (req, res) => {
 
     const progressDoc = await Progress.findOne({ userId }).lean();
 
-    if (!progressDoc) return res.json({ progress: {} });
+    if (!progressDoc) return res.json({ 
+      progress: {}, 
+      stats: { totalLessons: 0, completedLessons: 0, progressPercent: 0 } 
+    });
 
-    // Nếu có courseId, trả về tiến trình của course đó
+    const courses = progressDoc.courses || {};
+
     if (courseId) {
-      const courseProgress = progressDoc.courses.get(courseId)?.lessons || {};
-      return res.json({ progress: courseProgress });
+      const courseData = courses[courseId] || {};
+      const lessons = courseData.lessons || {};
+      const lessonList = Object.values(lessons);
+      
+      // Tính toán phần trăm hoàn thành
+      const totalLessons = lessonList.length;
+      const completedLessons = lessonList.filter(lesson => lesson.completed).length;
+      const progressPercent = totalLessons > 0 
+        ? Math.round((completedLessons / totalLessons) * 100) 
+        : 0;
+
+      return res.json({ 
+        progress: lessons,
+        stats: { totalLessons, completedLessons, progressPercent }
+      });
     }
 
-    // Trả về toàn bộ courses của user
+    // Xử lý trả về tất cả courses
     const allCourses = {};
-    for (const [courseId, courseData] of progressDoc.courses) {
-      allCourses[courseId] = courseData.lessons;
-    }
+    Object.entries(courses).forEach(([id, courseData]) => {
+      allCourses[id] = courseData.lessons;
+    });
 
     res.json({ progress: allCourses });
   } catch (error) {

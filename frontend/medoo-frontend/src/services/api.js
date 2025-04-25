@@ -34,8 +34,13 @@ export const courseService = {
   createCourse: (courseData) => api.post('/courses', courseData),
   updateCourse: (id, courseData) => api.put(`/courses/${id}`, courseData),
   deleteCourse: (id) => api.delete(`/courses/${id}`),
-  updateProgress: (courseId, lessonId, watchedSeconds) => 
-    api.post("/progress", { courseId, lessonId, watchedSeconds }),
+  updateProgress: (courseId, lessonId, watchedSeconds, totalDuration) => 
+    api.post("/progress", { 
+      courseId, 
+      lessonId, 
+      watchedSeconds,
+      totalDuration // Thêm trường này
+    }),
   getProgress: (courseId) => api.get(`/progress/${courseId}`)
 };
 

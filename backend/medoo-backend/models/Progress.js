@@ -14,7 +14,8 @@ const progressSchema = new mongoose.Schema({
         type: Map,
         of: new mongoose.Schema({
           watchedSeconds: { type: Number, default: 0 },
-          completed: { type: Boolean, default: false }
+          completed: { type: Boolean, default: false },
+          totalDuration: { type: Number, required: true } // Thêm trường này
         }, { _id: false })
       },
       lastAccessed: { type: Date, default: Date.now }
