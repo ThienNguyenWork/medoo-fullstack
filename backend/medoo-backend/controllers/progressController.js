@@ -20,14 +20,14 @@ exports.updateProgress = async (req, res) => {
     const isCompleted = totalDuration > 0 && 
       (newWatchedSeconds / totalDuration) >= COMPLETION_THRESHOLD;
 
-    const update = {
-      $set: {
-        [`courses.${courseId}.lessons.${lessonId}.watchedSeconds`]: newWatchedSeconds,
-        [`courses.${courseId}.lessons.${lessonId}.completed`]: isCompleted,
-        [`courses.${courseId}.lessons.${lessonId}.totalDuration`]: totalDuration,
-        [`courses.${courseId}.lastAccessed`]: new Date()
-      }
-    };
+      const update = {
+        $set: {
+          [`courses.${courseId}.lessons.${lessonId}.watchedSeconds`]: newWatchedSeconds,
+          [`courses.${courseId}.lessons.${lessonId}.completed`]: isCompleted,
+          [`courses.${courseId}.lessons.${lessonId}.totalDuration`]: totalDuration,
+          [`courses.${courseId}.lastAccessed`]: new Date()
+        }
+      };
 
     const progress = await Progress.findOneAndUpdate(
       { userId },
@@ -87,4 +87,51 @@ exports.getProgress = async (req, res) => {
     res.status(500).json({ message: "Lỗi tải tiến trình" });
   }
 };
-  
+  // Thêm hàm getDashboardStats trong ProgressController
+exports.getDashboardStats = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const progressDoc = await Progress.findOne({ userId }).lean();
+
+    if (!progressDoc) {
+      return res.json({
+        totalCourses: 0,
+        completedCourses: 0,
+        totalHours: 0,
+        ranking: 0
+      });
+    }
+
+    // Tính toán các thống kê
+    let totalHours = 0;
+    let completedCourses = 0;
+    const courses = progressDoc.courses || {};
+
+    Object.values(courses).forEach(course => {
+      const lessons = course.lessons || {};
+      
+      // Tính tổng giờ học
+      Object.values(lessons).forEach(lesson => {
+        totalHours += lesson.watchedSeconds / 3600; // Chuyển sang giờ
+      });
+
+      // Kiểm tra course hoàn thành (ví dụ: 85% bài học)
+      const totalLessons = Object.values(lessons).length;
+      const completedLessons = Object.values(lessons).filter(l => l.completed).length;
+      if (totalLessons > 0 && (completedLessons / totalLessons) >= 0.85) {
+        completedCourses++;
+      }
+    });
+
+    res.json({
+      totalCourses: Object.keys(courses).length,
+      completedCourses,
+      totalHours: totalHours.toFixed(2),
+      ranking: 0 // Tạm thời để 0, cần logic xếp hạng
+    });
+
+  } catch (error) {
+    console.error("❌ getDashboardStats error:", error);
+    res.status(500).json({ message: "Lỗi tải thống kê" });
+  }
+};
