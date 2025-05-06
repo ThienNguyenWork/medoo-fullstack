@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { Link } from "react-router-dom";
+import { slugify } from "../../utils/slugify";
 
 const MainContent = () => {
   const [role, setRole] = useState(null);
@@ -9,24 +11,24 @@ const MainContent = () => {
       totalCourses: 0,
       completedCourses: 0,
       totalHours: 0,
-      ranking: 0
+      ranking: 0,
     },
     courses: [],
-    loading: true
+    loading: true,
   });
 
   // Hàm cập nhật role từ localStorage
   const updateRoleFromStorage = () => {
     try {
-      const storedRole = localStorage.getItem('role');
-      if (storedRole === 'admin' || storedRole === 'user') {
+      const storedRole = localStorage.getItem("role");
+      if (storedRole === "admin" || storedRole === "user") {
         setRole(storedRole);
       } else {
-        setRole('guest');
+        setRole("guest");
       }
     } catch (error) {
-      console.error('Lỗi khi đọc thông tin role:', error);
-      setRole('guest');
+      console.error("Lỗi khi đọc thông tin role:", error);
+      setRole("guest");
     } finally {
       setIsLoading(false);
     }
@@ -35,10 +37,10 @@ const MainContent = () => {
   useEffect(() => {
     updateRoleFromStorage();
     const handleStorageChange = (e) => {
-      if (e.key === 'role') updateRoleFromStorage();
+      if (e.key === "role") updateRoleFromStorage();
     };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
   // Fetch dữ liệu dashboard
@@ -46,42 +48,42 @@ const MainContent = () => {
     const fetchDashboardData = async () => {
       try {
         const [statsRes, progressRes] = await Promise.all([
-          axios.get('/api/progress/stats/dashboard', {
-            headers: { 
-              Authorization: `Bearer ${localStorage.getItem('token')}` 
-            }
+          axios.get("/api/progress/stats/dashboard", {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
           }),
-          axios.get('/api/progress', {
-            headers: { 
-              Authorization: `Bearer ${localStorage.getItem('token')}` 
-            }
-          })
+          axios.get("/api/progress", {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }),
         ]);
-  
+
         // Xử lý dữ liệu courses theo response mới từ API
-        const coursesData = Array.isArray(progressRes.data) 
-          ? progressRes.data.map(course => ({
+        const coursesData = Array.isArray(progressRes.data)
+          ? progressRes.data.map((course) => ({
               ...course,
-              startDate: course.startDate || new Date().toISOString()
+              _id: course._id || course.id,
+              startDate: course.startDate || new Date().toISOString(),
             }))
           : [];
-  
+
         setDashboardData({
           stats: statsRes.data,
           courses: coursesData,
-          loading: false
+          loading: false,
         });
-  
       } catch (error) {
-        console.error('Lỗi tải dữ liệu:', error);
-        setDashboardData(prev => ({
+        console.error("Lỗi tải dữ liệu:", error);
+        setDashboardData((prev) => ({
           ...prev,
-          loading: false
+          loading: false,
         }));
       }
     };
-  
-    if (role === 'user') fetchDashboardData();
+
+    if (role === "user") fetchDashboardData();
   }, [role]);
 
   if (isLoading) {
@@ -99,16 +101,25 @@ const MainContent = () => {
 
       {/* Thống kê tổng quan */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <DashboardCard title="Tổng khóa học" value={dashboardData.stats.totalCourses} />
-        <DashboardCard title="Hoàn thành" value={dashboardData.stats.completedCourses} />
-        <DashboardCard title="Tổng giờ học" value={dashboardData.stats.totalHours} />
+        <DashboardCard
+          title="Tổng khóa học"
+          value={dashboardData.stats.totalCourses}
+        />
+        <DashboardCard
+          title="Hoàn thành"
+          value={dashboardData.stats.completedCourses}
+        />
+        <DashboardCard
+          title="Tổng giờ học"
+          value={dashboardData.stats.totalHours}
+        />
         <DashboardCard title="Xếp hạng" value={dashboardData.stats.ranking} />
       </div>
 
       {/* Danh sách khóa học */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         <h2 className="text-xl font-semibold mb-4">Khóa học của tôi</h2>
-        
+
         {dashboardData.loading ? (
           <div className="text-center py-4">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
@@ -118,7 +129,9 @@ const MainContent = () => {
             <table className="w-full">
               <thead>
                 <tr className="bg-gray-100 text-gray-700">
-                  <th className="px-4 py-3 text-left min-w-[300px]">Khóa học</th>
+                  <th className="px-4 py-3 text-left min-w-[300px]">
+                    Khóa học
+                  </th>
                   <th className="px-4 py-3 text-left">Ngày bắt đầu</th>
                   <th className="px-4 py-3 text-left">Tiến trình</th>
                 </tr>
@@ -132,28 +145,36 @@ const MainContent = () => {
                   </tr>
                 ) : (
                   dashboardData.courses.map((course) => (
-                    <tr key={course.id} className="border-b hover:bg-gray-50">
+                    <tr key={course._id} className="border-b hover:bg-gray-50">
                       <td className="px-4 py-3">
                         <div className="flex items-center">
                           <img
-                            src={course.thumbnail || '/default-thumbnail.jpg'}
+                            src={course.thumbnail || "/default-thumbnail.jpg"}
                             alt="Thumbnail"
                             className="w-16 h-16 object-cover rounded-lg mr-4"
                             onError={(e) => {
-                              e.target.src = '/default-thumbnail.jpg';
+                              e.target.src = "/default-thumbnail.jpg";
                             }}
                           />
-                          <span className="font-medium text-gray-800">
-                            {course.title || 'Khóa học không có tiêu đề'}
-                          </span>
+                          <Link
+                            to={`/course/${slugify(course.title)}-${
+                              course._id
+                            }`}
+                            className="font-medium text-gray-800 hover:underline"
+                          >
+                            {course.title || "Khóa học không có tiêu đề"}
+                          </Link>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-gray-600">
-                        {new Date(course.startDate).toLocaleDateString('vi-VN', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric'
-                        })}
+                        {new Date(course.startDate).toLocaleDateString(
+                          "vi-VN",
+                          {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                          }
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center">
@@ -184,7 +205,9 @@ const MainContent = () => {
   // Dashboard cho admin
   const renderAdminDashboard = () => (
     <div className="max-w-7xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6 text-red-600">Bảng điều khiển quản trị</h1>
+      <h1 className="text-2xl font-bold mb-6 text-red-600">
+        Bảng điều khiển quản trị
+      </h1>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <DashboardCard title="Tổng người dùng" value="125" />
@@ -223,8 +246,12 @@ const MainContent = () => {
                   </span>
                 </td>
                 <td className="px-4 py-3 space-x-2">
-                  <button className="text-blue-600 hover:text-blue-800">Sửa</button>
-                  <button className="text-red-600 hover:text-red-800">Xóa</button>
+                  <button className="text-blue-600 hover:text-blue-800">
+                    Sửa
+                  </button>
+                  <button className="text-red-600 hover:text-red-800">
+                    Xóa
+                  </button>
                 </td>
               </tr>
               <tr className="border-b hover:bg-gray-50">
@@ -237,8 +264,12 @@ const MainContent = () => {
                   </span>
                 </td>
                 <td className="px-4 py-3 space-x-2">
-                  <button className="text-blue-600 hover:text-blue-800">Sửa</button>
-                  <button className="text-red-600 hover:text-red-800">Xóa</button>
+                  <button className="text-blue-600 hover:text-blue-800">
+                    Sửa
+                  </button>
+                  <button className="text-red-600 hover:text-red-800">
+                    Xóa
+                  </button>
                 </td>
               </tr>
             </tbody>
@@ -249,13 +280,13 @@ const MainContent = () => {
   );
   return (
     <main className="flex-1 overflow-y-auto p-6 bg-gray-50 min-h-screen">
-      <div className={role !== 'admin' ? 'hidden' : ''}>
+      <div className={role !== "admin" ? "hidden" : ""}>
         {renderAdminDashboard()}
       </div>
-      <div className={role !== 'user' ? 'hidden' : ''}>
+      <div className={role !== "user" ? "hidden" : ""}>
         {renderUserDashboard()}
       </div>
-      {role === 'guest' && (
+      {role === "guest" && (
         <div className="text-center text-gray-600 mt-10">
           <p>Vui lòng đăng nhập để xem dashboard</p>
         </div>
@@ -268,7 +299,7 @@ const DashboardCard = ({ title, value }) => (
   <div className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow">
     <p className="text-gray-600 text-sm mb-1">{title}</p>
     <h3 className="text-2xl font-bold text-gray-800">
-      {typeof value === 'number' ? value.toLocaleString() : value}
+      {typeof value === "number" ? value.toLocaleString() : value}
     </h3>
   </div>
 );
