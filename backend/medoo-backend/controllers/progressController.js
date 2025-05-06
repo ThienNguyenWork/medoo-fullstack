@@ -1,5 +1,6 @@
 const Progress = require("../models/Progress");
-
+const mongoose = require("mongoose");
+const Course = require("../models/Course");
 exports.updateProgress = async (req, res) => {
   try {
     const { courseId, lessonId, watchedSeconds, totalDuration } = req.body;
@@ -48,45 +49,94 @@ exports.getProgress = async (req, res) => {
     const { courseId } = req.params;
     const userId = req.user.userId;
 
+    // Tìm tiến trình của người dùng
     const progressDoc = await Progress.findOne({ userId }).lean();
 
-    if (!progressDoc) return res.json({ 
-      progress: {}, 
-      stats: { totalLessons: 0, completedLessons: 0, progressPercent: 0 } 
-    });
+    if (!progressDoc) {
+      return res.status(200).json([]); // Trả về mảng rỗng nếu không có dữ liệu
+    }
 
     const courses = progressDoc.courses || {};
 
+    // Xử lý request có courseId
     if (courseId) {
       const courseData = courses[courseId] || {};
-      const lessons = courseData.lessons || {};
-      const lessonList = Object.values(lessons);
+      const lessons = Object.values(courseData.lessons || {});
       
-      // Tính toán phần trăm hoàn thành
-      const totalLessons = lessonList.length;
-      const completedLessons = lessonList.filter(lesson => lesson.completed).length;
+      const totalLessons = lessons.length;
+      const completedLessons = lessons.filter(lesson => lesson.completed).length;
       const progressPercent = totalLessons > 0 
         ? Math.round((completedLessons / totalLessons) * 100) 
         : 0;
 
-      return res.json({ 
+      return res.json({
         progress: lessons,
         stats: { totalLessons, completedLessons, progressPercent }
       });
     }
 
-    // Xử lý trả về tất cả courses
-    const allCourses = {};
-    Object.entries(courses).forEach(([id, courseData]) => {
-      allCourses[id] = courseData.lessons;
-    });
+    // Xử lý request không có courseId (get all courses)
+    const courseIds = Object.keys(courses);
+    const formattedCourses = [];
 
-    res.json({ progress: allCourses });
+    if (courseIds.length > 0) {
+      // Validate và convert courseIds
+      const validCourseIds = courseIds
+        .map(id => {
+          try {
+            return new mongoose.Types.ObjectId(id);
+          } catch {
+            return null;
+          }
+        })
+        .filter(id => id);
+
+      // Lấy thông tin courses từ database
+      const courseDetails = await Course.find(
+        { _id: { $in: validCourseIds } },
+        "title thumbnail createdAt"
+      ).lean();
+
+      // Tạo map để truy cập nhanh
+      const courseMap = new Map();
+      courseDetails.forEach(course => {
+        courseMap.set(course._id.toString(), course);
+      });
+
+      // Format dữ liệu response
+      courseIds.forEach(id => {
+        const courseProgress = courses[id];
+        const courseInfo = courseMap.get(id) || {};
+
+        formattedCourses.push({
+          id,
+          title: courseInfo.title || "Khóa học không có tiêu đề",
+          thumbnail: courseInfo.thumbnail || "",
+          startDate: courseProgress.lastAccessed || new Date(),
+          progressPercent: calculateCourseProgress(courseProgress.lessons),
+        });
+      });
+    }
+
+    res.json(formattedCourses);
+
   } catch (error) {
     console.error("❌ getProgress error:", error);
-    res.status(500).json({ message: "Lỗi tải tiến trình" });
+    res.status(500).json({
+      message: "Lỗi tải tiến trình",
+      error: error.message
+    });
   }
 };
+
+// Hàm tính phần trăm hoàn thành của course
+function calculateCourseProgress(lessons) {
+  const lessonList = Object.values(lessons || {});
+  const totalLessons = lessonList.length;
+  if (totalLessons === 0) return 0;
+  const completedLessons = lessonList.filter(lesson => lesson.completed).length;
+  return Math.round((completedLessons / totalLessons) * 100);
+}
   // Thêm hàm getDashboardStats trong ProgressController
 exports.getDashboardStats = async (req, res) => {
   try {

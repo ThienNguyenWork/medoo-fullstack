@@ -4,8 +4,9 @@ const { updateProgress, getProgress, getDashboardStats } = require("../controlle
 const auth = require("../middleware/auth");
 
 const router = express.Router();
-router.post("/", auth, updateProgress);
-router.get("/:courseId", auth, getProgress);
-// Thêm route mới
-router.get("/stats/dashboard", auth, getDashboardStats);
+router.get('/', auth, getProgress); 
+router.get('/stats/dashboard', auth, getDashboardStats);
+router.post('/', auth, updateProgress);
+router.get('/:courseId', auth, getProgress);
+
 module.exports = router;

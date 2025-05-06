@@ -41,7 +41,8 @@ export const courseService = {
       watchedSeconds,
       totalDuration // Thêm trường này
     }),
-  getProgress: (courseId) => api.get(`/progress/${courseId}`)
+  getProgress: (courseId) => api.get(`/progress/${courseId}`),
+  getDashboardStats: () => api.get('/progress/stats/dashboard')
 };
 
 export const contactService = {
