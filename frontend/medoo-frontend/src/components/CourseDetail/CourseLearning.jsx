@@ -24,6 +24,7 @@ const CourseLearning = () => {
   const [progress, setProgress] = useState({});
   const [hasPlayed, setHasPlayed] = useState(false);
   const [lastPosition, setLastPosition] = useState(0);
+  const [courseProgressPercent, setCourseProgressPercent] = useState(0); // Thêm state mới
   const videoRef = useRef(null);
 
   // Debounce function for progress updates
@@ -40,6 +41,7 @@ const CourseLearning = () => {
         // Refresh progress after update
         const { data: newProgress } = await courseService.getProgress(courseId);
         setProgress(newProgress.progress || {});
+        setCourseProgressPercent(newProgress.stats?.progressPercent || 0); // Cập nhật phần trăm mới
       } catch (error) {
         console.error("Lỗi cập nhật tiến trình:", error);
       }
@@ -66,6 +68,7 @@ const CourseLearning = () => {
         // Load user progress
         const { data: progressData } = await courseService.getProgress(courseId);
         const initialProgress = progressData.progress || {};
+        const initialProgressPercent = progressData.stats?.progressPercent || 0; // Lấy phần trăm từ API
         
         // Find first uncompleted lesson
         const firstUncompleted = parsedContent.lessons.find(lesson => {
@@ -74,6 +77,7 @@ const CourseLearning = () => {
 
         setSelectedLesson(firstUncompleted);
         setProgress(initialProgress);
+        setCourseProgressPercent(initialProgressPercent); // Set giá trị ban đầu
         setLastPosition(initialProgress[firstUncompleted?._id]?.watchedSeconds || 0);
       } catch (error) {
         console.error("Lỗi tải dữ liệu:", error);
@@ -141,10 +145,6 @@ const CourseLearning = () => {
     );
   };
 
-  // Calculate progress percentages
-  const totalSeconds = lessons.reduce(
-    (sum, lesson) => sum + parseDurationSeconds(lesson.duration), 0
-  );
 
   const watchedSeconds = Object.entries(progress).reduce(
     (sum, [id, data]) => {
@@ -154,10 +154,7 @@ const CourseLearning = () => {
     }, 0
   );
 
-  const progressPercent = totalSeconds > 0 
-    ? Math.round((watchedSeconds / totalSeconds) * 100)
-    : 0;
-
+ 
   if (loading) return <div className="p-4 text-white">Đang tải nội dung...</div>;
 
   return (
@@ -195,11 +192,11 @@ const CourseLearning = () => {
                   <div className="w-full bg-gray-700 rounded-full h-2">
                     <div 
                       className="h-2 bg-purple-500 rounded-full transition-all duration-300"
-                      style={{ width: `${progressPercent}%` }}
+                      style={{ width: `${courseProgressPercent}%` }}
                     />
                   </div>
                   <p className="text-xs text-gray-400 mt-1">
-                    {progressPercent}% hoàn thành • Đã xem {formatDuration(Math.floor(watchedSeconds/60))}
+                    {courseProgressPercent}% hoàn thành • Đã xem {formatDuration(Math.floor(watchedSeconds/60))}
                   </p>
                 </div>
               </div>
